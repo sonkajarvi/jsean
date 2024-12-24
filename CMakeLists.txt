@@ -30,3 +30,6 @@ target_compile_options(jsean PRIVATE
     -Werror
     -Wstrict-prototypes
 )
+
+enable_testing()
+add_subdirectory(test)
