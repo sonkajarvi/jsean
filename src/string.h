@@ -22,4 +22,6 @@ bool string_append_char(string *str, char c);
 bool string_append_chars(string *str, const char *s);
 bool string_append_chars_n(string *str, const char *s, const size_t n);
 
+bool string_reserve(string *str, const size_t n);
+
 #endif // STRING_H

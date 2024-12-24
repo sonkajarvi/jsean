@@ -66,3 +66,17 @@ skip_realloc:
     str->data[str->length] = '\0';
     return true;
 }
+
+bool string_reserve(string *str, const size_t n)
+{
+    if (!str || n <= str->capacity)
+        return false;
+
+    char *tmp;
+    if ((tmp = realloc(str->data, n)) == NULL)
+        return false;
+
+    str->data = tmp;
+    str->capacity = n;
+    return true;
+}
