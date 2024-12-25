@@ -8,6 +8,7 @@ add_library(jsean
     src/json.c
     src/object.c
     src/parse.c
+    src/stringify.c
 
     # String utility
     src/string.c

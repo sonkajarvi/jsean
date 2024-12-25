@@ -30,6 +30,7 @@ typedef struct json json_t;
 // Parse/generate
 json_t *json_parse(const char *bytes);
 json_t *json_parse_ext(const char *bytes, int *error);
+char *json_stringify(json_t *json, const char *indent_s);
 
 // Get type of JSON value
 enum json_type json_type(json_t *json);
