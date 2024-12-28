@@ -3,6 +3,7 @@
 //
 
 #include <assert.h>
+#include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -93,22 +94,26 @@ static bool object_rehash(struct json_object *object, const size_t new_cap)
     return true;
 }
 
-struct json json_new_object(void)
+int json_set_object(struct json *json)
 {
-    struct json json;
-    json.data._object = NULL;
-    json.type = JSON_TYPE_OBJECT;
-    struct json_object *object = to_object(&json);
-    if (!(object = object_resize(&json, object, OBJECT_INITIAL_CAPACITY)))
-        goto fail;
+    if (!json)
+        return EFAULT;
 
-    memset(json_object_buffer(object), 0,
-        object->capacity * sizeof(struct json_object_entry));
-    object->count = 0;
-    return json;
+    if (json->type != JSON_TYPE_OBJECT) {
+        json_free(json);
+        json->data._object = NULL;
+        json->type = JSON_TYPE_OBJECT;
 
-fail:
-    return (struct json){0};
+        struct json_object *object = to_object(json);
+        if (!(object = object_resize(json, object, OBJECT_INITIAL_CAPACITY)))
+            return ENOMEM;
+
+        memset(json_object_buffer(object), 0,
+            object->capacity * sizeof(struct json_object_entry));
+        object->count = 0;
+    }
+
+    return 0;
 }
 
 size_t json_object_count(struct json *json)

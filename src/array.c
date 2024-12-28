@@ -3,6 +3,7 @@
 //
 
 #include <assert.h>
+#include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,21 +38,24 @@ fail:
     return tmp;
 }
 
-struct json json_new_array(void)
+int json_set_array(struct json *json)
 {
-    struct json json;
-    json.data._array = NULL;
-    json.type = JSON_TYPE_ARRAY;
+    if (!json)
+        return EFAULT;
 
-    struct json_array *array = to_array(&json);
-    if (!(array = array_resize(&json, array, ARRAY_INITIAL_CAPACITY)))
-        goto fail;
+    if (json->type != JSON_TYPE_ARRAY) {
+        json_free(json);
+        json->data._array = NULL;
+        json->type = JSON_TYPE_ARRAY;
 
-    array->length = 0;
-    return json;
+        struct json_array *array = to_array(json);
+        if (!(array = array_resize(json, array, ARRAY_INITIAL_CAPACITY)))
+            return ENOMEM;
 
-fail:
-    return (struct json){0};
+        array->length = 0;
+    }
+
+    return 0;
 }
 
 size_t json_array_length(struct json *json)

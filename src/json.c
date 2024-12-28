@@ -2,6 +2,7 @@
 // Copyright (c) 2024, sonkajarvi
 //
 
+#include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,31 +74,31 @@ struct json json_new_null(void)
     return json;
 }
 
-void json_set_null(struct json *json)
+int json_set_null(struct json *json)
 {
     if (!json)
-        return;
+        return EFAULT;
 
-    json_free(json);
-    json->type = JSON_TYPE_NULL;
+    if (json->type != JSON_TYPE_NULL) {
+        json_free(json);
+        json->type = JSON_TYPE_NULL;
+    }
+
+    return 0;
 }
 
-struct json json_new_boolean(bool b)
-{
-    struct json json;
-    json.type = JSON_TYPE_NULL;
-    json_set_boolean(&json, b);
-    return json;
-}
-
-void json_set_boolean(struct json *json, bool b)
+int json_set_boolean(struct json *json, bool b)
 {
     if (!json)
-        return;
+        return EFAULT;
 
-    json_free(json);
-    json->type = JSON_TYPE_BOOLEAN;
+    if (json->type != JSON_TYPE_BOOLEAN) {
+        json_free(json);
+        json->type = JSON_TYPE_BOOLEAN;
+    }
+
     json->data._boolean = b;
+    return 0;
 }
 
 bool json_boolean(struct json *json)
@@ -124,20 +125,19 @@ bool json_boolean(struct json *json)
     return 0;
 }
 
-struct json json_new_signed(int64_t i)
+int json_set_signed(struct json *json, int64_t i)
 {
-    struct json json;
-    json.type = JSON_TYPE_NULL;
-    json_set_signed(&json, i);
-    return json;
-}
+    if (!json)
+        return EFAULT;
 
-void json_set_signed(struct json *json, int64_t i)
-{
-    json_free(json);
-    json->type = JSON_TYPE_NUMBER;
+    if (json->type != JSON_TYPE_NUMBER) {
+        json_free(json);
+        json->type = JSON_TYPE_NUMBER;
+    }
+
     json->number_type = JSON_NUMBER_SIGNED;
     json->data._signed = i;
+    return 0;
 }
 
 int64_t json_signed(struct json *json)
@@ -168,23 +168,19 @@ int64_t json_signed(struct json *json)
     return 0;
 }
 
-struct json json_new_unsigned(uint64_t u)
-{
-    struct json json;
-    json.type = JSON_TYPE_NULL;
-    json_set_unsigned(&json, u);
-    return json;
-}
-
-void json_set_unsigned(struct json *json, uint64_t u)
+int json_set_unsigned(struct json *json, uint64_t u)
 {
     if (!json)
-        return;
+        return EFAULT;
 
-    json_free(json);
-    json->type = JSON_TYPE_NUMBER;
+    if (json->type != JSON_TYPE_NUMBER) {
+        json_free(json);
+        json->type = JSON_TYPE_NUMBER;
+    }
+
     json->number_type = JSON_NUMBER_UNSIGNED;
     json->data._unsigned = u;
+    return 0;
 }
 
 uint64_t json_unsigned(struct json *json)
@@ -215,23 +211,19 @@ uint64_t json_unsigned(struct json *json)
     return 0;
 }
 
-struct json json_new_double(double d)
-{
-    struct json json;
-    json.type = JSON_TYPE_NULL;
-    json_set_double(&json, d);
-    return json;
-}
-
-void json_set_double(struct json *json, double d)
+int json_set_double(struct json *json, double d)
 {
     if (!json)
-        return;
+        return EFAULT;
 
-    json_free(json);
-    json->type = JSON_TYPE_NUMBER;
+    if (json->type != JSON_TYPE_NUMBER) {
+        json_free(json);
+        json->type = JSON_TYPE_NUMBER;
+    }
+
     json->number_type = JSON_NUMBER_DOUBLE;
     json->data._double = d;
+    return 0;
 }
 
 double json_double(struct json *json)
@@ -260,14 +252,6 @@ double json_double(struct json *json)
     return 0.0;
 }
 
-struct json json_new_string(const char *s)
-{
-    struct json json;
-    json.type = JSON_TYPE_NULL;
-    json_set_string(&json, s);
-    return json;
-}
-
 // Internal
 struct json json_new_string_without_copy(char *s)
 {
@@ -277,14 +261,15 @@ struct json json_new_string_without_copy(char *s)
     return json;
 }
 
-void json_set_string(struct json *json, const char *s)
+int json_set_string(struct json *json, const char *s)
 {
     if (!json || !s)
-        return;
+        return EFAULT;
 
     json_free(json);
     json->type = JSON_TYPE_STRING;
     json->data._string = strdup(s);
+    return 0;
 }
 
 char *json_string(struct json *json)
