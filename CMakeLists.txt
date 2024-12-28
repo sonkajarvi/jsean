@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.20)
 
 project(jsean LANGUAGES C)
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_library(jsean
     # JSON
     src/array.c
@@ -12,11 +16,6 @@ add_library(jsean
 
     # String utility
     src/string.c
-)
-
-set_target_properties(jsean PROPERTIES
-    C_STANDARD 11
-    C_STANDARD_REQUIRED ON
 )
 
 target_include_directories(jsean PRIVATE
@@ -32,5 +31,4 @@ target_compile_options(jsean PRIVATE
     -Wstrict-prototypes
 )
 
-enable_testing()
-add_subdirectory(test)
+add_subdirectory(tests)

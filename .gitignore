@@ -10,3 +10,5 @@ build.ninja
 .ninja_log
 
 *.a
+
+tests/tests

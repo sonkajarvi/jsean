@@ -1,6 +1,6 @@
-#include "test.h"
+#include <test.h>
 
-#include "../src/string.h"
+#include "../../src/string.h"
 
 #define LARGE 100000
 
