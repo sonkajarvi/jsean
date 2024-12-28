@@ -67,6 +67,45 @@ size_t json_array_length(struct json *json)
     return array->length;
 }
 
+size_t json_array_capacity(struct json *json)
+{
+    struct json_array *array;
+    if (!(array = to_array(json)))
+        return 0;
+
+    return array->capacity;
+}
+
+int json_array_reserve(struct json *json, const size_t n)
+{
+    struct json_array *array;
+    if (!(array = to_array(json)))
+        return EFAULT;
+
+    if (n == 0)
+        return EINVAL;
+
+    if (n <= array->capacity)
+        return 0;
+
+    if (!(array = array_resize(json, array, n)))
+        return ENOMEM;
+
+    return 0;
+}
+
+void json_array_clear(struct json *json)
+{
+    struct json_array *array;
+    if (!(array = to_array(json)))
+        return;
+
+    for (size_t i = 0; i < array->length; i++)
+        json_free(&json_array_buffer(array)[i]);
+
+    array->length = 0;
+}
+
 struct json *json_array_at(struct json *json, size_t i)
 {
     struct json_array *array;
@@ -76,21 +115,24 @@ struct json *json_array_at(struct json *json, size_t i)
     return &json_array_buffer(array)[i];
 }
 
-struct json *json_array_push(struct json *json, struct json *other)
+int json_array_push(struct json *json, struct json *other)
 {
     struct json_array *array;
     if (!(array = to_array(json)) || !other)
-        return NULL;
+        return EFAULT;
+
+    if (json_type(other) == JSON_TYPE_UNKNOWN)
+        return EINVAL;
 
     // Allocate more memory when needed
     if (array->length >= array->capacity &&
         !(array = array_resize(json, array, 2 * array->capacity)))
-            return NULL;
+            return ENOMEM;
 
     json_move(&json_array_buffer(array)[array->length], other);
     array->length++;
 
-    return other;
+    return 0;
 }
 
 void json_array_pop(struct json *json)
@@ -104,4 +146,46 @@ void json_array_pop(struct json *json)
 
     if (array->length < array->capacity / 4)
         array_resize(json, array, array->capacity / 2);
+}
+
+int json_array_insert(struct json *json, size_t i, struct json *other)
+{
+    struct json_array *array;
+    if (!(array = to_array(json)) || !other)
+        return EFAULT;
+
+    if (i > array->length || json_type(other) == JSON_TYPE_UNKNOWN)
+        return EINVAL;
+
+    if (i == array->length)
+        return json_array_push(json, other);
+
+    // Allocate more memory when needed
+    if (array->length >= array->capacity &&
+        !(array = array_resize(json, array, 2 * array->capacity)))
+            return ENOMEM;
+
+    // Shift elements to the right
+    memcpy(&json_array_buffer(array)[i + 1], &json_array_buffer(array)[i],
+        (array->length - i) * sizeof(struct json));
+
+    json_move(&json_array_buffer(array)[i], other);
+    array->length++;
+
+    return 0;
+}
+
+void json_array_remove(struct json *json, size_t i)
+{
+    struct json_array *array;
+    if (!(array = to_array(json)) || i >= array->length)
+        return;
+
+    json_free(&json_array_buffer(array)[i]);
+
+    // Shift elements to the left
+    memcpy(&json_array_buffer(array)[i], &json_array_buffer(array)[i + 1],
+        (array->length - i - 1) * sizeof(struct json));
+
+    array->length--;
 }

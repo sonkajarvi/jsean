@@ -110,9 +110,14 @@ void json_object_remove(struct json *json, const char *key);
 // JSON array
 int json_set_array(struct json *json);
 size_t json_array_length(struct json *json);
+size_t json_array_capacity(struct json *json);
+int json_array_reserve(struct json *json, const size_t n);
+void json_array_clear(struct json *json);
 struct json *json_array_at(struct json *json, size_t i);
-struct json *json_array_push(struct json *json, struct json *other);
+int json_array_push(struct json *json, struct json *other);
 void json_array_pop(struct json *json);
+int json_array_insert(struct json *json, size_t i, struct json *other);
+void json_array_remove(struct json *json, size_t i);
 
 // JSON number
 int json_set_signed(struct json *json, int64_t i);
