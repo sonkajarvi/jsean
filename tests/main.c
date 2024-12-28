@@ -14,6 +14,17 @@ int main(void)
     test_declare(json_set_and_get_double);
     test_declare(json_set_and_get_string);
 
+    test_declare(json_set_array);
+    test_declare(json_array_length);
+    test_declare(json_array_capacity);
+    test_declare(json_array_reserve);
+    test_declare(json_array_clear);
+    test_declare(json_array_at);
+    test_declare(json_array_push);
+    test_declare(json_array_pop);
+    test_declare(json_array_insert);
+    test_declare(json_array_remove);
+
     // String
     test_declare(string_free);
     test_declare(string_append_char);
