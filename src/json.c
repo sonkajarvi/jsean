@@ -47,6 +47,14 @@ static void object_free(struct json *json)
     free(object);
 }
 
+void json_move(void *lhs, void *rhs)
+{
+    if (!lhs || !rhs)
+        return;
+
+    memcpy(lhs, rhs, sizeof(struct json));
+}
+
 enum json_type json_type(struct json *json)
 {
     return json->type;

@@ -10,7 +10,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 
 // JSON types
 enum json_type
@@ -68,13 +67,7 @@ struct json_object
 };
 
 // Move JSON value from @rhs to @lhs
-static inline void json_move(void *lhs, void *rhs)
-{
-    if (!lhs || !rhs)
-        return;
-
-    memcpy(lhs, rhs, sizeof(*lhs));
-}
+void json_move(void *lhs, void *rhs);
 
 static inline struct json *json_array_buffer(struct json_array *array)
 {
