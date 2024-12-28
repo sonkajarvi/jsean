@@ -4,7 +4,6 @@
 
 #include <assert.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -87,8 +86,7 @@ static bool object_rehash(struct json_object *object, const size_t new_cap)
         } while (!is_empty(object, j));
 
         buffer[j].key = buffer[i].key;
-        // buffer[j].value = buffer[i].value;
-        memcpy(&buffer[j].value, &buffer[i].value, sizeof(buffer[i].value));
+        json_move(&buffer[j].value, &buffer[i].value);
         buffer[i].key = NULL;
     }
 
@@ -177,8 +175,7 @@ struct json *json_object_insert_without_copy(struct json *json, char *key, struc
     }
 
     buffer[i].key = key;
-    // buffer[i].value = other;
-    memcpy(&buffer[i].value, other, sizeof(*other));
+    json_move(&buffer[i].value, other);
     object->count++;
 
     return other;

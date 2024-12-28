@@ -186,6 +186,7 @@ static int read_string(struct reader *rd, string *out)
     if (read(rd) != '"')
         return JSON_PARSE_EXPECTED_QUOTATION_MARK;
 
+    string_reserve(out, 256);
     while ((c = peek(rd) & 0xff) != '"') {
         switch (c) {
         case 0x20 ... 0x21:

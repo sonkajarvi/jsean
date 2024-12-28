@@ -83,8 +83,7 @@ struct json *json_array_push(struct json *json, struct json *other)
         !(array = array_resize(json, array, 2 * array->capacity)))
             return NULL;
 
-    // json_array_buffer(array)[array->length] = other;
-    memcpy(&json_array_buffer(array)[array->length], other, sizeof(*other));
+    json_move(&json_array_buffer(array)[array->length], other);
     array->length++;
 
     return other;
