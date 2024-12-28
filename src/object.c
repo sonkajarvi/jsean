@@ -8,8 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "internal.h"
-#include "jsean/json.h"
+#include <jsean/json.h>
 
 #define OBJECT_INITIAL_CAPACITY     16
 #define OBJECT_LOAD_FACTOR_MAX      0.8
@@ -36,7 +35,7 @@ static bool is_empty(struct json_object *object, const size_t i)
     return !json_object_buffer(object)[i].key;
 }
 
-static struct json_object *to_object(json_t *json)
+static struct json_object *to_object(struct json *json)
 {
     if (!json || json->type != JSON_TYPE_OBJECT)
         return NULL;
@@ -44,7 +43,7 @@ static struct json_object *to_object(json_t *json)
     return json->data._object;
 }
 
-static struct json_object *object_resize(json_t *json,
+static struct json_object *object_resize(struct json *json,
     struct json_object *object, size_t new_cap)
 {
     if (new_cap < OBJECT_INITIAL_CAPACITY)
@@ -53,13 +52,13 @@ static struct json_object *object_resize(json_t *json,
     const size_t old_cap = object ? object->capacity : 0;
 
     struct json_object *tmp;
-    tmp = realloc(object, sizeof(struct json_object) + new_cap * sizeof(struct json_object_node));
+    tmp = realloc(object, sizeof(struct json_object) + new_cap * sizeof(struct json_object_entry));
     if (!tmp)
         goto fail;
 
     if (new_cap > old_cap) {
         memset(json_object_buffer(tmp) + old_cap, 0,
-            (new_cap - old_cap) * sizeof(struct json_object_node));
+            (new_cap - old_cap) * sizeof(struct json_object_entry));
     }
 
     tmp->capacity = new_cap;
@@ -71,7 +70,7 @@ fail:
 
 static bool object_rehash(struct json_object *object, const size_t new_cap)
 {
-    struct json_object_node *buffer;
+    struct json_object_entry *buffer;
     const char *key;
 
     const size_t old_cap = new_cap >= object->capacity ? new_cap / 2 : new_cap;
@@ -88,36 +87,33 @@ static bool object_rehash(struct json_object *object, const size_t new_cap)
         } while (!is_empty(object, j));
 
         buffer[j].key = buffer[i].key;
-        buffer[j].value = buffer[i].value;
+        // buffer[j].value = buffer[i].value;
+        memcpy(&buffer[j].value, &buffer[i].value, sizeof(buffer[i].value));
         buffer[i].key = NULL;
     }
 
     return true;
 }
 
-json_t *json_new_object(void)
+struct json json_new_object(void)
 {
-    json_t *json = malloc(sizeof(*json));
-    if (!json)
-        return NULL;
-
-    json->data._object = NULL;
-    json->type = JSON_TYPE_OBJECT;
-    struct json_object *object = to_object(json);
-    if (!(object = object_resize(json, object, OBJECT_INITIAL_CAPACITY)))
+    struct json json;
+    json.data._object = NULL;
+    json.type = JSON_TYPE_OBJECT;
+    struct json_object *object = to_object(&json);
+    if (!(object = object_resize(&json, object, OBJECT_INITIAL_CAPACITY)))
         goto fail;
 
     memset(json_object_buffer(object), 0,
-        object->capacity * sizeof(struct json_object_node));
+        object->capacity * sizeof(struct json_object_entry));
     object->count = 0;
     return json;
 
 fail:
-    free(json);
-    return NULL;
+    return (struct json){0};
 }
 
-size_t json_object_count(json_t *json)
+size_t json_object_count(struct json *json)
 {
     struct json_object *object;
     if (!(object = to_object(json)))
@@ -126,13 +122,13 @@ size_t json_object_count(json_t *json)
     return object->count;
 }
 
-json_t *json_object_get(json_t *json, const char *key)
+struct json *json_object_get(struct json *json, const char *key)
 {
     struct json_object *object;
     if (!(object = to_object(json)))
         return NULL;
 
-    struct json_object_node *buffer = json_object_buffer(object);
+    struct json_object_entry *buffer = json_object_buffer(object);
     size_t j = object->capacity, i = hash(key) % j;
     do {
         if (i >= object->capacity)
@@ -142,19 +138,19 @@ json_t *json_object_get(json_t *json, const char *key)
             continue;
 
         if (strcmp(key, buffer[i].key) == 0)
-            return buffer[i].value;
+            return &buffer[i].value;
     } while ((i++, j--));
 
     return NULL;
 }
 
-json_t *json_object_insert(json_t *json, const char *key, json_t *other)
+struct json *json_object_insert(struct json *json, const char *key, struct json *other)
 {
     return json_object_insert_without_copy(json, strdup(key), other);
 }
 
 // Internal
-json_t *json_object_insert_without_copy(json_t *json, char *key, json_t *other)
+struct json *json_object_insert_without_copy(struct json *json, char *key, struct json *other)
 {
     struct json_object *object;
     if (!(object = to_object(json)) || !key || !other)
@@ -168,7 +164,7 @@ json_t *json_object_insert_without_copy(json_t *json, char *key, json_t *other)
             return NULL;
     }
 
-    struct json_object_node *buffer = json_object_buffer(object);
+    struct json_object_entry *buffer = json_object_buffer(object);
     size_t i = hash(key) % object->capacity;
     while (!is_empty(object, i)) {
         // Duplicate key
@@ -181,13 +177,14 @@ json_t *json_object_insert_without_copy(json_t *json, char *key, json_t *other)
     }
 
     buffer[i].key = key;
-    buffer[i].value = other;
+    // buffer[i].value = other;
+    memcpy(&buffer[i].value, other, sizeof(*other));
     object->count++;
 
     return other;
 }
 
-void json_object_remove(json_t *json, const char *key)
+void json_object_remove(struct json *json, const char *key)
 {
     struct json_object *object;
     if (!(object = to_object(json)))
@@ -201,12 +198,12 @@ void json_object_remove(json_t *json, const char *key)
         object = object_resize(json, object, object->capacity / 2);
     }
 
-    struct json_object_node *buffer = json_object_buffer(object);
+    struct json_object_entry *buffer = json_object_buffer(object);
     size_t i = hash(key) % object->capacity;
     if (is_empty(object, i))
         return;
 
     free(buffer[i].key);
     buffer[i].key = NULL;
-    json_free(buffer[i].value);
+    json_free(&buffer[i].value);
 }

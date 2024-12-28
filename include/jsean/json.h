@@ -15,7 +15,6 @@
 enum json_type
 {
     JSON_TYPE_UNKNOWN,
-
     JSON_TYPE_NULL,
     JSON_TYPE_BOOLEAN,
     JSON_TYPE_OBJECT,
@@ -24,59 +23,112 @@ enum json_type
     JSON_TYPE_STRING,
 };
 
-// Opaque JSON value
-typedef struct json json_t;
+// Internal: JSON number type
+enum json_number_type
+{
+    JSON_NUMBER_SIGNED,
+    JSON_NUMBER_UNSIGNED,
+    JSON_NUMBER_DOUBLE,
+};
 
-// Parse/generate
-json_t *json_parse(const char *bytes);
-json_t *json_parse_ext(const char *bytes, int *error);
-char *json_stringify(json_t *json, const char *indent_s);
+// JSON value
+struct json
+{
+    union {
+        bool                _boolean;
+        int64_t             _signed;
+        uint64_t            _unsigned;
+        double              _double;
+        char               *_string;
+        struct json_array  *_array;
+        struct json_object *_object;
+    } data;
+
+    uint8_t type; 
+    uint8_t number_type;
+};
+
+struct json_array
+{
+    size_t capacity;
+    size_t length;
+};
+
+struct json_object_entry
+{
+    struct json value;
+    char *key;
+};
+
+struct json_object
+{
+    size_t capacity;
+    size_t count;
+};
+
+static inline struct json *json_array_buffer(struct json_array *array)
+{
+    return (void *)array + sizeof(*array);
+}
+
+static inline struct json_object_entry *json_object_buffer(struct json_object *object)
+{
+    return (void *)object + sizeof(*object);
+}
+
+struct json json_new_string_without_copy(char *s);
+struct json *json_object_insert_without_copy(struct json *json, char *key, struct json *other);
+
+// Parse / generate
+struct json json_parse(const char *bytes);
+struct json json_parse_ext(const char *bytes, int *error);
+char *json_stringify(struct json *json, const char *indent_s);
 
 // Get type of JSON value
-enum json_type json_type(json_t *json);
+enum json_type json_type(struct json *json);
 
 // Free any JSON value
-void json_free(json_t *json);
+void json_free(struct json *json);
 
 // JSON null
-json_t *json_new_null(void);
-void json_set_null(json_t *json);
+struct json json_new_null(void);
+void json_set_null(struct json *json);
 
 // JSON boolean
-json_t *json_new_boolean(bool b);
-void json_set_boolean(json_t *json, bool b);
-bool json_boolean(json_t *json);
+struct json json_new_boolean(bool b);
+void json_set_boolean(struct json *json, bool b);
+bool json_boolean(struct json *json);
 
 // JSON object
-json_t *json_new_object(void);
-size_t json_object_count(json_t *json);
-json_t *json_object_get(json_t *json, const char *key);
-json_t *json_object_insert(json_t *json, const char *key, json_t *other);
-void json_object_remove(json_t *json, const char *key);
+struct json json_new_object(void);
+size_t json_object_count(struct json *json);
+struct json *json_object_get(struct json *json, const char *key);
+struct json *json_object_insert(struct json *json, const char *key, struct json *other);
+void json_object_remove(struct json *json, const char *key);
 
 // JSON array
-json_t *json_new_array(void);
-size_t json_array_length(json_t *json);
-json_t *json_array_at(json_t *json, size_t i);
-json_t *json_array_push(json_t *json, json_t *other);
-void json_array_pop(json_t *json);
+struct json json_new_array(void);
+size_t json_array_length(struct json *json);
+struct json *json_array_at(struct json *json, size_t i);
+struct json *json_array_push(struct json *json, struct json *other);
+void json_array_pop(struct json *json);
 
 // JSON number
-json_t *json_new_signed(int64_t i);
-void json_set_signed(json_t *json, int64_t i);
-int64_t json_signed(json_t *json);
+struct json json_new_signed(int64_t i);
+void json_set_signed(struct json *json, int64_t i);
+int64_t json_signed(struct json *json);
 
-json_t *json_new_unsigned(uint64_t u);
-void json_set_unsigned(json_t *json, uint64_t u);
-uint64_t json_unsigned(json_t *json);
+struct json json_new_unsigned(uint64_t u);
+void json_set_unsigned(struct json *json, uint64_t u);
+uint64_t json_unsigned(struct json *json);
 
-json_t *json_new_double(double d);
-void json_set_double(json_t *json, double d);
-double json_double(json_t *json);
+struct json json_new_double(double d);
+void json_set_double(struct json *json, double d);
+double json_double(struct json *json);
 
 // JSON string
-json_t *json_new_string(const char *s);
-void json_set_string(json_t *json, const char *s);
-char *json_string(json_t *json);
+struct json json_new_string(const char *s);
+void json_set_string(struct json *json, const char *s);
+char *json_string(struct json *json);
 
 #endif // JSEAN_JSON_H

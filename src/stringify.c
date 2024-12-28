@@ -5,13 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "internal.h"
-#include "jsean/json.h"
+#include <jsean/json.h>
+
 #include "string.h"
 
 #define STRINGIFY_INITIAL_CAPACITY 256
 
-static void write_value(string *str, json_t *json, int indent, const char *indent_s);
+static void write_value(string *str, struct json *json, int indent, const char *indent_s);
 
 static void write_indent(string *str, int indent, const char *indent_s)
 {
@@ -19,7 +19,7 @@ static void write_indent(string *str, int indent, const char *indent_s)
         string_append_chars(str, indent_s);
 }
 
-static void write_array(string *str, json_t *json, int indent, const char *indent_s)
+static void write_array(string *str, struct json *json, int indent, const char *indent_s)
 {
     string_append_char(str, '[');
     if (indent_s)
@@ -46,7 +46,7 @@ static void write_array(string *str, json_t *json, int indent, const char *inden
     string_append_char(str, ']');
 }
 
-static void write_object(string *str, json_t *json, int indent, const char *indent_s)
+static void write_object(string *str, struct json *json, int indent, const char *indent_s)
 {
     struct json_object *object = json->data._object;
 
@@ -54,7 +54,7 @@ static void write_object(string *str, json_t *json, int indent, const char *inde
     if (indent_s)
         string_append_char(str, '\n');
 
-    struct json_object_node *buffer = json_object_buffer(object);
+    struct json_object_entry *buffer = json_object_buffer(object);
     for (size_t i = 0, j = object->count; j; i++) {
         if (!buffer[i].key)
             continue;
@@ -72,7 +72,7 @@ static void write_object(string *str, json_t *json, int indent, const char *inde
         string_append_chars(str, "\":");
         if (indent_s)
             string_append_char(str, ' ');
-        write_value(str, buffer[i].value, indent + 1, indent_s);
+        write_value(str, &buffer[i].value, indent + 1, indent_s);
 
         j--;
     }
@@ -85,7 +85,7 @@ static void write_object(string *str, json_t *json, int indent, const char *inde
     string_append_char(str, '}');
 }
 
-static void write_value(string *str, json_t *json, int indent, const char *indent_s)
+static void write_value(string *str, struct json *json, int indent, const char *indent_s)
 {
     char buf[64];
 
@@ -105,9 +105,9 @@ static void write_value(string *str, json_t *json, int indent, const char *inden
         break;
 
     case JSON_TYPE_NUMBER:
-        if (json->type_ext == JSON_TYPE_EXT_INT)
+        if (json->number_type == JSON_NUMBER_SIGNED)
             snprintf(buf, sizeof(buf), "%ld", json->data._signed);
-        else if (json->type_ext == JSON_TYPE_EXT_UINT)
+        else if (json->number_type == JSON_NUMBER_UNSIGNED)
             snprintf(buf, sizeof(buf), "%lu", json->data._unsigned);
         else
             snprintf(buf, sizeof(buf), "%f", json->data._double);
@@ -134,7 +134,7 @@ static void write_value(string *str, json_t *json, int indent, const char *inden
     }
 }
 
-char *json_stringify(json_t *json, const char *indent_s)
+char *json_stringify(struct json *json, const char *indent_s)
 {
     string str = {0};
     string_reserve(&str, STRINGIFY_INITIAL_CAPACITY);

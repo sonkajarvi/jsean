@@ -5,12 +5,13 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "internal.h"
+#include <jsean/json.h>
 
 #define ARRAY_INITIAL_CAPACITY 16
 
-static struct json_array *to_array(json_t *json)
+static struct json_array *to_array(struct json *json)
 {
     if (!json || json->type != JSON_TYPE_ARRAY)
         return NULL;
@@ -18,14 +19,14 @@ static struct json_array *to_array(json_t *json)
     return json->data._array;
 }
 
-static struct json_array *array_resize(json_t *json,
+static struct json_array *array_resize(struct json *json,
     struct json_array *array, size_t new_cap)
 {
     if (new_cap < ARRAY_INITIAL_CAPACITY)
         new_cap = ARRAY_INITIAL_CAPACITY;
 
     struct json_array *tmp;
-    tmp = realloc(array, sizeof(struct json_array) + new_cap * sizeof(json_t *));
+    tmp = realloc(array, sizeof(struct json_array) + new_cap * sizeof(struct json));
     if (!tmp)
         goto fail;
 
@@ -36,27 +37,24 @@ fail:
     return tmp;
 }
 
-json_t *json_new_array(void)
+struct json json_new_array(void)
 {
-    json_t *json = malloc(sizeof(*json));
-    if (!json)
-        return NULL;
+    struct json json;
+    json.data._array = NULL;
+    json.type = JSON_TYPE_ARRAY;
 
-    json->data._array = NULL;
-    json->type = JSON_TYPE_ARRAY;
-    struct json_array *array = to_array(json);
-    if (!(array = array_resize(json, array, ARRAY_INITIAL_CAPACITY)))
+    struct json_array *array = to_array(&json);
+    if (!(array = array_resize(&json, array, ARRAY_INITIAL_CAPACITY)))
         goto fail;
 
     array->length = 0;
     return json;
 
 fail:
-    free(json);
-    return NULL;
+    return (struct json){0};
 }
 
-size_t json_array_length(json_t *json)
+size_t json_array_length(struct json *json)
 {
     struct json_array *array;
     if (!(array = to_array(json)))
@@ -65,16 +63,16 @@ size_t json_array_length(json_t *json)
     return array->length;
 }
 
-json_t *json_array_at(json_t *json, size_t i)
+struct json *json_array_at(struct json *json, size_t i)
 {
     struct json_array *array;
     if (!(array = to_array(json)) || i >= array->length)
         return NULL;
 
-    return json_array_buffer(array)[i];
+    return &json_array_buffer(array)[i];
 }
 
-json_t *json_array_push(json_t *json, json_t *other)
+struct json *json_array_push(struct json *json, struct json *other)
 {
     struct json_array *array;
     if (!(array = to_array(json)) || !other)
@@ -85,19 +83,20 @@ json_t *json_array_push(json_t *json, json_t *other)
         !(array = array_resize(json, array, 2 * array->capacity)))
             return NULL;
 
-    json_array_buffer(array)[array->length] = other;
+    // json_array_buffer(array)[array->length] = other;
+    memcpy(&json_array_buffer(array)[array->length], other, sizeof(*other));
     array->length++;
 
     return other;
 }
 
-void json_array_pop(json_t *json)
+void json_array_pop(struct json *json)
 {
     struct json_array *array;
     if (!(array = to_array(json)) || array->length == 0)
         return;
 
-    json_free(json_array_buffer(array)[array->length - 1]);
+    json_free(&json_array_buffer(array)[array->length - 1]);
     array->length--;
 
     if (array->length < array->capacity / 4)

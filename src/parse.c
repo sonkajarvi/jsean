@@ -67,17 +67,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "internal.h"
+#include <jsean/json.h>
+
 #include "string.h"
-
-#define PARSE_OK 0
-#define PARSE_MEMORY_ERROR 1
-#define PARSE_SYNTAX_ERROR 2
-#define PARSE_SSCANF_ERROR 3
-
-#define ERROR (1 + __COUNTER__)
-
-#define STRING_INITIAL_CAPACITY 16
 
 #define SET_RETVAL_AND_GOTO(x, label) { retval = x; goto label; }
 
@@ -139,12 +131,12 @@ struct reader
 static int read_string(struct reader *rd, string *out);
 
 // Also parses false, null and true
-static int parse_value(struct reader *rd, json_t **out);
+static int parse_value(struct reader *rd, struct json *out);
 
-static int parse_object(struct reader *rd, json_t **out);
-static int parse_array(struct reader *rd, json_t **out);
-static int parse_number(struct reader *rd, json_t **out);
-static int parse_string(struct reader *rd, json_t **out);
+static int parse_object(struct reader *rd, struct json *out);
+static int parse_array(struct reader *rd, struct json *out);
+static int parse_number(struct reader *rd, struct json *out);
+static int parse_string(struct reader *rd, struct json *out);
 
 static inline int peek(struct reader *rd)
 {
@@ -281,31 +273,28 @@ end:
     return retval;
 }
 
-static int parse_string(struct reader *rd, json_t **out)
+static int parse_string(struct reader *rd, struct json *out)
 {
-    json_t *value;
     string string = {0};
     int retval = JSON_PARSE_OK;
 
     if ((retval = read_string(rd, &string)) != JSON_PARSE_OK)
         goto end;
-    if ((value = json_new_string_without_copy(string.data)) == NULL)
-        SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
-    *out = value;
+    *out = json_new_string_without_copy(string.data);
 end:
     return retval;
 }
 
-static int parse_array(struct reader *rd, json_t **array)
+static int parse_array(struct reader *rd, struct json *array)
 {
-    json_t *value;
+    struct json value = {0};
     int retval = JSON_PARSE_OK;
 
     skip_whitespace(rd);
     if (read(rd) != '[')
         SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_ARRAY_BEGIN, fail);
 
-    if ((*array = json_new_array()) == NULL)
+    if ((*array = json_new_array()).type == JSON_TYPE_UNKNOWN)
         SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
 
     for (;;) {
@@ -317,7 +306,7 @@ static int parse_array(struct reader *rd, json_t **array)
         if ((retval = parse_value(rd, &value)) != JSON_PARSE_OK)
             goto fail;
 
-        if (json_array_push(*array, value) == NULL)
+        if (json_array_push(array, &value) == NULL)
             SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
 
         skip_whitespace(rd);
@@ -336,11 +325,11 @@ static int parse_array(struct reader *rd, json_t **array)
 
     return retval;
 fail:
-    json_free(*array);
+    json_free(array);
     return retval;
 }
 
-static int parse_number(struct reader *rd, json_t **number)
+static int parse_number(struct reader *rd, struct json *number)
 {
     union {
         uint64_t u;
@@ -423,24 +412,20 @@ number:
     if (has_exp) {
         if (!sscanf(&rd->bytes[start], "%le", &data.d))
             SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_CHARACTER, fail);
-        if ((*number = json_new_double(data.d)) == NULL)
-            SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
+        *number = json_new_double(data.d);
     } else if (has_frac) {
         if (!sscanf(&rd->bytes[start], "%lf", &data.d))
             SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_CHARACTER, fail);
-        if ((*number = json_new_double(data.d)) == NULL)
-            SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
+        *number = json_new_double(data.d);
     } else {
         if (has_minus) {
             if (!sscanf(&rd->bytes[start], "%ld", &data.i))
                 SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_CHARACTER, fail);
-            if ((*number = json_new_signed(data.i)) == NULL)
-                SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
+            *number = json_new_signed(data.i);
         } else {
             if (!sscanf(&rd->bytes[start], "%lu", &data.u))
                 SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_CHARACTER, fail);
-            if ((*number = json_new_unsigned(data.u)) == NULL)
-                SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
+            *number = json_new_unsigned(data.u);
         }
     }
 
@@ -448,7 +433,7 @@ fail:
     return retval;
 }
 
-static int parse_value(struct reader *rd, json_t **out)
+static int parse_value(struct reader *rd, struct json *out)
 {
     int c, retval = JSON_PARSE_OK;
 
@@ -456,34 +441,31 @@ static int parse_value(struct reader *rd, json_t **out)
     case 'f':
         if (strncmp(&rd->bytes[rd->index], "false", 5) != 0)
             SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_FALSE, end);
-        if ((*out = json_new_boolean(false)) == NULL)
-            SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
+        *out = json_new_boolean(false);
         rd->index += 5;
         break;
 
     case 'n':
         if (strncmp(&rd->bytes[rd->index], "null", 4) != 0)
             SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_NULL, end);
-        if ((*out = json_new_null()) == NULL)
-            SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
+        *out = json_new_null();
         rd->index += 4;
         break;
 
     case 't':
         if (strncmp(&rd->bytes[rd->index], "true", 4) != 0)
             SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_TRUE, end);
-        if ((*out = json_new_boolean(true)) == NULL)
-            SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
+        *out = json_new_boolean(true);
         rd->index += 4;
         break;
 
     case '{':
-        if ((retval = parse_object(rd, out)) != PARSE_OK)
+        if ((retval = parse_object(rd, out)) != JSON_PARSE_OK)
             goto end;
         break;
 
     case '[':
-        if ((retval = parse_array(rd, out)) != PARSE_OK)
+        if ((retval = parse_array(rd, out)) != JSON_PARSE_OK)
             goto end;
         break;
 
@@ -498,12 +480,12 @@ static int parse_value(struct reader *rd, json_t **out)
     case '7':
     case '8':
     case '9':
-        if ((retval = parse_number(rd, out)) != PARSE_OK)
+        if ((retval = parse_number(rd, out)) != JSON_PARSE_OK)
             goto end;
         break;
 
     case '"':
-        if ((retval = parse_string(rd, out)) != PARSE_OK)
+        if ((retval = parse_string(rd, out)) != JSON_PARSE_OK)
             goto end;
         break;
 
@@ -515,9 +497,9 @@ end:
     return retval;
 }
 
-static int parse_object(struct reader *rd, json_t **object)
+static int parse_object(struct reader *rd, struct json *object)
 {
-    json_t *value;
+    struct json value = {0};
     string string;
     int retval = JSON_PARSE_OK;
 
@@ -525,7 +507,7 @@ static int parse_object(struct reader *rd, json_t **object)
     if (read(rd) != '{')
         SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_BEGIN_OBJECT, fail);
 
-    if ((*object = json_new_object()) == NULL)
+    if ((*object = json_new_object()).type == JSON_TYPE_UNKNOWN)
         SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
 
     for (;;) {
@@ -546,7 +528,7 @@ static int parse_object(struct reader *rd, json_t **object)
         if ((retval = parse_value(rd, &value)) != JSON_PARSE_OK)
             goto fail;
 
-        if (!json_object_insert_without_copy(*object, string.data, value))
+        if (!json_object_insert_without_copy(object, string.data, &value))
             SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
 
         skip_whitespace(rd);
@@ -565,18 +547,18 @@ static int parse_object(struct reader *rd, json_t **object)
 
     return retval;
 fail:
-    json_free(*object);
+    json_free(object);
     return retval;
 }
 
-json_t *json_parse(const char *bytes)
+struct json json_parse(const char *bytes)
 {
     return json_parse_ext(bytes, NULL);
 }
 
-json_t *json_parse_ext(const char *bytes, int *error)
+struct json json_parse_ext(const char *bytes, int *error)
 {
-    json_t *json;
+    struct json json = {0};
     int result;
 
     struct reader rd = {
@@ -588,7 +570,7 @@ json_t *json_parse_ext(const char *bytes, int *error)
 
     skip_whitespace(&rd);
     if ((result = parse_value(&rd, &json)) != JSON_PARSE_OK)
-        json = NULL;
+        memset(&json, 0, sizeof(json));
 
     // skip_whitespace(&rd);
     // if (peek(&rd) != 0) {
