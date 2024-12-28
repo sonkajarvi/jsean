@@ -1,11 +1,12 @@
 #include <stdio.h> // IWYU pragma: keep
 
-#include "test.h"
+#include <test.h>
 
 int main(void)
 {
     // JSON
-    test_declare(json_get_type);
+    test_declare(json_move);
+    test_declare(json_type);
     test_declare(json_set_null);
     test_declare(json_set_and_get_boolean);
     test_declare(json_set_and_get_signed);

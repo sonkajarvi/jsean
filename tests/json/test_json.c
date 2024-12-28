@@ -1,10 +1,26 @@
 #include <errno.h>
 #include <limits.h>
+#include <string.h>
 
 #include <jsean/json.h>
 #include <test.h>
 
-test_case(json_get_type)
+test_case(json_move)
+{
+    struct json json = {0}, tmp = {0};
+
+    json_set_signed(&json, 1);
+    test_assert(json_type(&json) == JSON_TYPE_NUMBER);
+    test_assert(json_signed(&json) == 1);
+
+    json_move(&tmp, &json);
+    test_assert(json_type(&tmp) == JSON_TYPE_NUMBER);
+    test_assert(json_signed(&tmp) == 1);
+
+    test_success();
+}
+
+test_case(json_type)
 {
     struct json json = {0};
 
