@@ -1,6 +1,8 @@
 //
 // Copyright (c) 2024, sonkajarvi
 //
+// SPDX-License-Identifier: MIT
+//
 
 // https://datatracker.ietf.org/doc/html/rfc8259
 
@@ -23,7 +25,7 @@ enum json_type
     JSON_TYPE_STRING,
 };
 
-// Internal: JSON number type
+// Internal: JSON number types
 enum json_number_type
 {
     JSON_NUMBER_SIGNED,

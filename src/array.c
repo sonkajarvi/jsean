@@ -1,6 +1,8 @@
 //
 // Copyright (c) 2024, sonkajarvi
 //
+// SPDX-License-Identifier: MIT
+//
 
 #include <assert.h>
 #include <errno.h>

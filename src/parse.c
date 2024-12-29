@@ -1,6 +1,8 @@
 //
 // Copyright (c) 2024, sonkajarvi
 //
+// SPDX-License-Identifier: MIT
+//
 
 #include <stddef.h>
 #include <stdio.h>
