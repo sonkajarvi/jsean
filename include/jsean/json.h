@@ -79,8 +79,8 @@ static inline struct json_object_entry *json_object_buffer(struct json_object *o
     return (void *)object + sizeof(*object);
 }
 
+// Internal
 struct json json_new_string_without_copy(char *s);
-struct json *json_object_insert_without_copy(struct json *json, char *key, struct json *other);
 
 // Parse / generate
 struct json json_parse(const char *bytes);
@@ -103,9 +103,14 @@ bool json_boolean(struct json *json);
 // JSON object
 int json_set_object(struct json *json);
 size_t json_object_count(struct json *json);
+size_t json_object_capacity(struct json *json);
+void json_object_clear(struct json *json);
 struct json *json_object_get(struct json *json, const char *key);
-struct json *json_object_insert(struct json *json, const char *key, struct json *other);
+int json_object_insert(struct json *json, const char *key, struct json *value);
+int json_object_overwrite(struct json *json, const char *key, struct json *value);
 void json_object_remove(struct json *json, const char *key);
+// Internal: Does not copy key
+int json_internal_object_insert(struct json *json, char *key, struct json *other);
 
 // JSON array
 int json_set_array(struct json *json);
@@ -114,9 +119,9 @@ size_t json_array_capacity(struct json *json);
 int json_array_reserve(struct json *json, const size_t n);
 void json_array_clear(struct json *json);
 struct json *json_array_at(struct json *json, size_t i);
-int json_array_push(struct json *json, struct json *other);
+int json_array_push(struct json *json, struct json *value);
 void json_array_pop(struct json *json);
-int json_array_insert(struct json *json, size_t i, struct json *other);
+int json_array_insert(struct json *json, size_t i, struct json *value);
 void json_array_remove(struct json *json, size_t i);
 
 // JSON number

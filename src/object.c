@@ -43,6 +43,28 @@ static struct json_object *to_object(struct json *json)
     return json->data._object;
 }
 
+static size_t json_object_index_of(struct json *json, const char *key)
+{
+    struct json_object *object;
+    if (!(object = to_object(json)))
+        return -1;
+
+    struct json_object_entry *buffer = json_object_buffer(object);
+    size_t j = object->capacity, i = hash(key) % j;
+    do {
+        if (i >= object->capacity)
+            i = 0;
+
+        if (is_empty(object, i))
+            continue;
+
+        if (strcmp(key, buffer[i].key) == 0)
+            return i;
+    } while ((i++, j--));
+
+    return -1;
+}
+
 static struct json_object *object_resize(struct json *json,
     struct json_object *object, size_t new_cap)
 {
@@ -125,6 +147,33 @@ size_t json_object_count(struct json *json)
     return object->count;
 }
 
+size_t json_object_capacity(struct json *json)
+{
+    struct json_object *object;
+    if (!(object = to_object(json)))
+        return 0;
+
+    return object->capacity;
+}
+
+void json_object_clear(struct json *json)
+{
+    struct json_object *object;
+    if (!(object = to_object(json)))
+        return;
+
+    struct json_object_entry *buffer = json_object_buffer(object);
+    for (size_t i = 0; i < object->capacity; i++) {
+        if (!is_empty(object, i)) {
+            free(buffer[i].key);
+            json_free(&buffer[i].value);
+            buffer[i].key = NULL;
+        }
+    }
+
+    object->count = 0;
+}
+
 struct json *json_object_get(struct json *json, const char *key)
 {
     struct json_object *object;
@@ -147,24 +196,35 @@ struct json *json_object_get(struct json *json, const char *key)
     return NULL;
 }
 
-struct json *json_object_insert(struct json *json, const char *key, struct json *other)
+int json_object_insert(struct json *json, const char *key, struct json *value)
 {
-    return json_object_insert_without_copy(json, strdup(key), other);
+    char *copy;
+    int retval;
+
+    if (!key)
+        return EFAULT;
+    if (!(copy = strdup(key)))
+        return ENOMEM;
+    if ((retval = json_internal_object_insert(json, copy, value)) != 0)
+        free(copy);
+    return retval;
 }
 
 // Internal
-struct json *json_object_insert_without_copy(struct json *json, char *key, struct json *other)
+int json_internal_object_insert(struct json *json, char *key, struct json *value)
 {
     struct json_object *object;
-    if (!(object = to_object(json)) || !key || !other)
-        return NULL;
+    if (!json || !key || !value)
+        return EFAULT;
+
+    if (!(object = to_object(json)) || json_type(value) == JSON_TYPE_UNKNOWN)
+        return EINVAL;
 
     // Allocate more memory and rehash
     if (load_factor(object) > OBJECT_LOAD_FACTOR_MAX) {
         if (!(object = object_resize(json, object, 2 * object->capacity)))
-            return NULL;
-        if (!object_rehash(object, object->capacity))
-            return NULL;
+            return ENOMEM;
+        object_rehash(object, object->capacity);
     }
 
     struct json_object_entry *buffer = json_object_buffer(object);
@@ -172,7 +232,7 @@ struct json *json_object_insert_without_copy(struct json *json, char *key, struc
     while (!is_empty(object, i)) {
         // Duplicate key
         if (strcmp(key, buffer[i].key) == 0)
-            return NULL;
+            return EINVAL;
 
         i++;
         if (i >= object->capacity)
@@ -180,32 +240,52 @@ struct json *json_object_insert_without_copy(struct json *json, char *key, struc
     }
 
     buffer[i].key = key;
-    json_move(&buffer[i].value, other);
+    json_move(&buffer[i].value, value);
     object->count++;
 
-    return other;
+    return 0;
+}
+
+int json_object_overwrite(struct json *json, const char *key, struct json *value)
+{
+    struct json_object *object;
+    struct json *tmp;
+
+    if (!json || !key || !value)
+        return EFAULT;
+
+    if (!(object = to_object(json)) || json_type(value) == JSON_TYPE_UNKNOWN)
+        return EINVAL;
+
+    if ((tmp  = json_object_get(json, key)) == NULL)
+        return json_object_insert(json, key, value);
+
+    json_move(tmp, value);
+    return 0;
 }
 
 void json_object_remove(struct json *json, const char *key)
 {
     struct json_object *object;
+    size_t index;
+
     if (!(object = to_object(json)))
         return;
 
-    // Rehash and halve the capacity
+    if ((index = json_object_index_of(json, key)) == (size_t)-1)
+        return;
+
+    struct json_object_entry *buffer = json_object_buffer(object);
+    free(buffer[index].key);
+    buffer[index].key = NULL;
+    json_free(&buffer[index].value);
+    object->count--;
+
+    // Rehash and halve the capacity if needed
     if (load_factor(object) < OBJECT_LOAD_FACTOR_MIN) {
         if (!object_rehash(object, object->capacity / 2))
             return;
 
         object = object_resize(json, object, object->capacity / 2);
     }
-
-    struct json_object_entry *buffer = json_object_buffer(object);
-    size_t i = hash(key) % object->capacity;
-    if (is_empty(object, i))
-        return;
-
-    free(buffer[i].key);
-    buffer[i].key = NULL;
-    json_free(&buffer[i].value);
 }

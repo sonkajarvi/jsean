@@ -115,13 +115,13 @@ struct json *json_array_at(struct json *json, size_t i)
     return &json_array_buffer(array)[i];
 }
 
-int json_array_push(struct json *json, struct json *other)
+int json_array_push(struct json *json, struct json *value)
 {
     struct json_array *array;
-    if (!(array = to_array(json)) || !other)
+    if (!json || !value)
         return EFAULT;
 
-    if (json_type(other) == JSON_TYPE_UNKNOWN)
+    if (!(array = to_array(json)) || json_type(value) == JSON_TYPE_UNKNOWN)
         return EINVAL;
 
     // Allocate more memory when needed
@@ -129,7 +129,7 @@ int json_array_push(struct json *json, struct json *other)
         !(array = array_resize(json, array, 2 * array->capacity)))
             return ENOMEM;
 
-    json_move(&json_array_buffer(array)[array->length], other);
+    json_move(&json_array_buffer(array)[array->length], value);
     array->length++;
 
     return 0;
@@ -148,17 +148,18 @@ void json_array_pop(struct json *json)
         array_resize(json, array, array->capacity / 2);
 }
 
-int json_array_insert(struct json *json, size_t i, struct json *other)
+int json_array_insert(struct json *json, size_t i, struct json *value)
 {
     struct json_array *array;
-    if (!(array = to_array(json)) || !other)
+    if (!json || !value)
         return EFAULT;
 
-    if (i > array->length || json_type(other) == JSON_TYPE_UNKNOWN)
+    if (!(array = to_array(json)) || i > array->length ||
+        json_type(value) == JSON_TYPE_UNKNOWN)
         return EINVAL;
 
     if (i == array->length)
-        return json_array_push(json, other);
+        return json_array_push(json, value);
 
     // Allocate more memory when needed
     if (array->length >= array->capacity &&
@@ -169,7 +170,7 @@ int json_array_insert(struct json *json, size_t i, struct json *other)
     memcpy(&json_array_buffer(array)[i + 1], &json_array_buffer(array)[i],
         (array->length - i) * sizeof(struct json));
 
-    json_move(&json_array_buffer(array)[i], other);
+    json_move(&json_array_buffer(array)[i], value);
     array->length++;
 
     return 0;
