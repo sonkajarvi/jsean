@@ -116,7 +116,7 @@ static bool object_rehash(struct json_object *object, const size_t new_cap)
     return true;
 }
 
-int json_set_object(struct json *json)
+int json_init_object(struct json *json)
 {
     if (!json)
         return EFAULT;

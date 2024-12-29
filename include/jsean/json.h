@@ -94,14 +94,14 @@ enum json_type json_type(struct json *json);
 void json_free(struct json *json);
 
 // JSON null
-int json_set_null(struct json *json);
+int json_init_null(struct json *json);
 
 // JSON boolean
-int json_set_boolean(struct json *json, bool b);
+int json_init_boolean(struct json *json, bool b);
 bool json_boolean(struct json *json);
 
 // JSON object
-int json_set_object(struct json *json);
+int json_init_object(struct json *json);
 size_t json_object_count(struct json *json);
 size_t json_object_capacity(struct json *json);
 void json_object_clear(struct json *json);
@@ -113,7 +113,7 @@ void json_object_remove(struct json *json, const char *key);
 int json_internal_object_insert(struct json *json, char *key, struct json *other);
 
 // JSON array
-int json_set_array(struct json *json);
+int json_init_array(struct json *json);
 size_t json_array_length(struct json *json);
 size_t json_array_capacity(struct json *json);
 int json_array_reserve(struct json *json, const size_t n);
@@ -125,17 +125,17 @@ int json_array_insert(struct json *json, size_t i, struct json *value);
 void json_array_remove(struct json *json, size_t i);
 
 // JSON number
-int json_set_signed(struct json *json, int64_t i);
+int json_init_signed(struct json *json, int64_t i);
 int64_t json_signed(struct json *json);
 
-int json_set_unsigned(struct json *json, uint64_t u);
+int json_init_unsigned(struct json *json, uint64_t u);
 uint64_t json_unsigned(struct json *json);
 
-int json_set_double(struct json *json, double d);
+int json_init_double(struct json *json, double d);
 double json_double(struct json *json);
 
 // JSON string
-int json_set_string(struct json *json, const char *s);
+int json_init_string(struct json *json, const char *s);
 char *json_string(struct json *json);
 
 #endif // JSEAN_JSON_H

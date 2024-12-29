@@ -7,7 +7,7 @@ test_case(json_set_array)
 {
     struct json json = {0};
 
-    json_set_array(&json);
+    json_init_array(&json);
     test_assert(json_type(&json) == JSON_TYPE_ARRAY);
     test_assert(json_array_capacity(&json) > 0);
     test_assert(json_array_length(&json) == 0);
@@ -24,12 +24,12 @@ test_case(json_array_length)
     test_assert(json_array_length(NULL) == 0);
 
     // Try getting length of empty JSON array
-    json_set_array(&json);
+    json_init_array(&json);
     test_assert(json_array_length(&json) == 0);
     json_array_clear(&json);
 
     // Get length of populated JSON array
-    json_set_signed(&tmp, -1);
+    json_init_signed(&tmp, -1);
     for (int i = 0; i < 1000; i++) {
         json_array_push(&json, &tmp);
     }
@@ -37,7 +37,7 @@ test_case(json_array_length)
     json_free(&json);
 
     // Try getting length of non-array JSON value
-    json_set_signed(&json, -1);
+    json_init_signed(&json, -1);
     test_assert(json_array_length(&json) == 0);
 
     test_success();
@@ -51,12 +51,12 @@ test_case(json_array_capacity)
     test_assert(json_array_capacity(NULL) == 0);
 
     // Get capacity of initialized JSON array
-    json_set_array(&json);
+    json_init_array(&json);
     test_assert(json_array_capacity(&json) > 0);
     json_free(&json);
 
     // Try getting capacity of non-array JSON value
-    json_set_signed(&json, -1);
+    json_init_signed(&json, -1);
     test_assert(json_array_capacity(&json) == 0);
 
     test_success();
@@ -70,7 +70,7 @@ test_case(json_array_reserve)
     test_assert(json_array_reserve(NULL, 0) == EFAULT);
 
     // Try reserving less than current capacity
-    json_set_array(&json);
+    json_init_array(&json);
     test_assert(json_array_reserve(&json, 0) == EINVAL);
 
     // Reserve memory for JSON array
@@ -85,13 +85,13 @@ test_case(json_array_clear)
 {
     struct json json = {0}, tmp = {0};
 
-    json_set_array(&json);
+    json_init_array(&json);
     json_array_reserve(&json, 1000);
     json_array_clear(&json);
     test_assert(json_array_capacity(&json) >= 1000);
 
     // Clear populated JSON array
-    json_set_signed(&tmp, -1);
+    json_init_signed(&tmp, -1);
     for (int i = 0; i < 1000; i++)
         json_array_push(&json, &tmp);
     json_array_clear(&json);
@@ -110,11 +110,11 @@ test_case(json_array_at)
     test_assert(json_array_at(NULL, 0) == NULL);
 
     // Try getting element from empty JSON array
-    json_set_array(&json);
+    json_init_array(&json);
     test_assert(json_array_at(&json, 0) == NULL);
 
     // Get element from populated JSON array
-    json_set_signed(&tmp, -1);
+    json_init_signed(&tmp, -1);
     json_array_push(&json, &tmp);
     test_assert(json_array_at(&json, 0) != NULL);
     json_free(&json);
@@ -131,18 +131,18 @@ test_case(json_array_push)
     test_assert(json_array_push(NULL, &tmp) == EFAULT);
 
     // Try pushing unknown JSON value
-    json_set_array(&json);
+    json_init_array(&json);
     test_assert(json_array_push(&json, &tmp) == EINVAL);
 
     // Push with valid arguments
-    json_set_signed(&tmp, -1);
+    json_init_signed(&tmp, -1);
     for (int i = 0; i < 1000; i++)
         json_array_push(&json, &tmp);
     test_assert(json_array_length(&json) == 1000);
     json_free(&json);
 
     // Try pushing with non-array JSON value
-    json_set_signed(&json, -1);
+    json_init_signed(&json, -1);
     test_assert(json_array_push(&json, &tmp) == EINVAL);
 
     test_success();
@@ -152,8 +152,8 @@ test_case(json_array_pop)
 {
     struct json json = {0}, tmp = {0};
 
-    json_set_array(&json);
-    json_set_signed(&tmp, -1);
+    json_init_array(&json);
+    json_init_signed(&tmp, -1);
 
     for (int i = 0; i < 1000; i++)
         json_array_push(&json, &tmp);
@@ -173,32 +173,32 @@ test_case(json_array_insert)
     struct json json = {0}, tmp = {0};
 
     // Try inserting unknown JSON value
-    json_set_array(&json);
+    json_init_array(&json);
     test_assert(json_array_insert(&json, 0, &tmp) == EINVAL);
 
     // Try inserting with invalid arguments
     test_assert(json_array_insert(&json, 0, NULL) == EFAULT);
-    json_set_signed(&tmp, -1);
+    json_init_signed(&tmp, -1);
     test_assert(json_array_insert(NULL, 0, &tmp) == EFAULT);
 
     // Try inserting out of bounds
     test_assert(json_array_insert(&json, 1, &tmp) == EINVAL);
 
-    json_set_signed(&tmp, 1);
+    json_init_signed(&tmp, 1);
     json_array_push(&json, &tmp);
-    json_set_signed(&tmp, 3);
+    json_init_signed(&tmp, 3);
     json_array_push(&json, &tmp);
 
     // Insert at the beginning
-    json_set_signed(&tmp, 0);
+    json_init_signed(&tmp, 0);
     test_assert(json_array_insert(&json, 0, &tmp) == 0);
 
     // Insert at the middle
-    json_set_signed(&tmp, 2);
+    json_init_signed(&tmp, 2);
     test_assert(json_array_insert(&json, 2, &tmp) == 0);
 
     // Insert at the end
-    json_set_signed(&tmp, 4);
+    json_init_signed(&tmp, 4);
     test_assert(json_array_insert(&json, 4, &tmp) == 0);
 
     test_assert(json_array_length(&json) == 5);
@@ -207,7 +207,7 @@ test_case(json_array_insert)
     json_free(&json);
 
     // Try inserting with non-array JSON value
-    json_set_signed(&json, -1);
+    json_init_signed(&json, -1);
     test_assert(json_array_insert(&json, 0, &tmp) == EINVAL);
 
     test_success();
@@ -217,8 +217,8 @@ test_case(json_array_remove)
 {
     struct json json = {0}, tmp = {0};
 
-    json_set_array(&json);
-    json_set_signed(&tmp, -1);
+    json_init_array(&json);
+    json_init_signed(&tmp, -1);
     for (int i = 0; i < 3; i++)
         json_array_push(&json, &tmp);
 

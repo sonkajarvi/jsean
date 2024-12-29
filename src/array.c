@@ -38,7 +38,7 @@ fail:
     return tmp;
 }
 
-int json_set_array(struct json *json)
+int json_init_array(struct json *json)
 {
     if (!json)
         return EFAULT;
