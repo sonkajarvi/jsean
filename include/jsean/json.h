@@ -83,8 +83,7 @@ static inline struct json_object_entry *json_object_buffer(struct json_object *o
 struct json json_new_string_without_copy(char *s);
 
 // Parse / generate
-struct json json_parse(const char *bytes);
-struct json json_parse_ext(const char *bytes, int *error);
+int json_parse(struct json *json, const char *bytes);
 char *json_stringify(struct json *json, const char *indent_s);
 
 // Get type of JSON value

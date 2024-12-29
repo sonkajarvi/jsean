@@ -2,74 +2,12 @@
 // Copyright (c) 2024, sonkajarvi
 //
 
-//
-// JSON-text = ws value ws
-//
-// begin-array     = ws %x5B ws  ; [ left square bracket
-// begin-object    = ws %x7B ws  ; { left curly bracket
-// end-array       = ws %x5D ws  ; ] right square bracket
-// end-object      = ws %x7D ws  ; } right curly bracket
-// name-separator  = ws %x3A ws  ; : colon
-// value-separator = ws %x2C ws  ; , comma
-//
-// ws = *(
-//         %x20 /              ; Space
-//         %x09 /              ; Horizontal tab
-//         %x0A /              ; Line feed or New line
-//         %x0D )              ; Carriage return
-//
-// value = false / null / true / object / array / number / string
-//
-// false = %x66.61.6c.73.65   ; false
-// null  = %x6e.75.6c.6c      ; null
-// true  = %x74.72.75.65      ; true
-//
-// object = begin-object [ member *( value-separator member ) ]
-//          end-object
-//
-// member = string name-separator value
-//
-// array = begin-array [ value *( value-separator value ) ] end-array
-//
-// number = [ minus ] int [ frac ] [ exp ]
-//
-// decimal-point = %x2E       ; .
-// digit1-9 = %x31-39         ; 1-9
-// e = %x65 / %x45            ; e E
-// exp = e [ minus / plus ] 1*DIGIT
-// frac = decimal-point 1*DIGIT
-// int = zero / ( digit1-9 *DIGIT )
-// minus = %x2D               ; -
-// plus = %x2B                ; +
-// zero = %x30                ; 0
-//
-// string = quotation-mark *char quotation-mark
-//
-// char = unescaped /
-//     escape (
-//         %x22 /          ; "    quotation mark  U+0022
-//         %x5C /          ; \    reverse solidus U+005C
-//         %x2F /          ; /    solidus         U+002F
-//         %x62 /          ; b    backspace       U+0008
-//         %x66 /          ; f    form feed       U+000C
-//         %x6E /          ; n    line feed       U+000A
-//         %x72 /          ; r    carriage return U+000D
-//         %x74 /          ; t    tab             U+0009
-//         %x75 4HEXDIG )  ; uXXXX                U+XXXX
-//
-// escape = %x5C              ; '\'
-// quotation-mark = %x22      ; "
-// unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
-//
-
+#include <stddef.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <jsean/json.h>
-
-#include "string.h"
 
 #define SET_RETVAL_AND_GOTO(x, label) { retval = x; goto label; }
 
@@ -83,7 +21,7 @@ enum json_parse_result {
     JSON_PARSE_EXPECTED_VALUE_SEPARATOR,
     JSON_PARSE_UNEXPECTED_END_OBJECT,
     JSON_PARSE_EXPECTED_QUOTATION_MARK,
-    JSON_PARSE_INVALID_UNICODE,
+    JSON_PARSE_INVALID_ESCAPED_UNICODE,
     JSON_PARSE_UNEXPECTED_EOF,
     JSON_PARSE_UNEXPECTED_CHARACTER,
     JSON_PARSE_EXPECTED_EOF,
@@ -106,7 +44,7 @@ const char *parse_result_to_string(int result)
         "Expected ','",
         "Unexpected '}'",
         "Expected '\"'",
-        "Invalid Unicode",
+        "Invalid escaped unicode",
         "Unexpected EOF",
         "Unexpected character",
         "Expected EOF",
@@ -128,25 +66,23 @@ struct reader
     size_t col;
 };
 
-static int read_string(struct reader *rd, string *out);
+static int read_string(struct reader *rd, char **out);
 
-// Also parses false, null and true
 static int parse_value(struct reader *rd, struct json *out);
-
 static int parse_object(struct reader *rd, struct json *out);
 static int parse_array(struct reader *rd, struct json *out);
 static int parse_number(struct reader *rd, struct json *out);
 static int parse_string(struct reader *rd, struct json *out);
 
-static inline int peek(struct reader *rd)
+static inline char peek(struct reader *rd)
 {
     return rd->bytes[rd->index];
 }
 
-static int read(struct reader *rd)
+static char read(struct reader *rd)
 {
-    int c = peek(rd);
-    rd->index += !!c;
+    char c = peek(rd);
+    rd->index++;
 
     if (c == '\n') {
         rd->ln++;
@@ -160,365 +96,134 @@ static int read(struct reader *rd)
 
 static void skip_whitespace(struct reader *rd)
 {
-    int c;
-    while ((c = peek(rd)) == 0x20 || c == 0x09 || c == 0x0a || c == 0x0d)
+    char c;
+    while ((c = peek(rd)) == ' ' || c == '\t' || c == '\n' || c == '\r')
         read(rd);
 }
 
-static int byte_count(const int c)
+static inline bool is_hex(const char c)
 {
-    if ((c & 0x80) == 0x0)
-        return 1;
-    else if ((c & 0xe0) == 0xc0)
-        return 2;
-    else if ((c & 0xf0) == 0xe0)
-        return 3;
-    else if ((c & 0xf8) == 0xf0)
-        return 4;
-    return 0;
+    return ('0' <= c && c <= '9') ||
+           ('a' <= c && c <= 'f') ||
+           ('A' <= c && c <= 'F');
 }
 
-static int read_string(struct reader *rd, string *out)
+static int read_string(struct reader *rd, char **out)
 {
-    char *tmp;
-    int c, bc, retval = JSON_PARSE_OK;
+    size_t start;
+    char c;
 
     if (read(rd) != '"')
         return JSON_PARSE_EXPECTED_QUOTATION_MARK;
 
-    string_reserve(out, 256);
-    while ((c = peek(rd) & 0xff) != '"') {
-        switch (c) {
-        case 0x20 ... 0x21:
-        case 0x23 ... 0x5b:
-        case 0x5d ... 0xff:
-            if ((bc = byte_count(c)) == 0)
-                SET_RETVAL_AND_GOTO(JSON_PARSE_INVALID_UNICODE, end);
-            while (bc--) {
-                if ((c = read(rd)) == '\0')
-                    SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_EOF, end);
-                if (!string_append_char(out, c))
-                    SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
-            }
-            break;
-
-        case '\\':
-            read(rd); // Skip '\\'
-
+    start = rd->index;
+    while ((c = peek(rd)) != '"') {
+        if (c == '\\') {
+            read(rd); // Skip '\'
             switch (peek(rd)) {
             case '"':
-                if (!string_append_char(out, '"'))
-                    SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
-                break;
             case '\\':
-                if (!string_append_char(out, '\\'))
-                    SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
-                break;
             case '/':
-                if (!string_append_char(out, '/'))
-                    SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
-                break;
             case 'b':
-                if (!string_append_char(out, '\b'))
-                    SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
-                break;
             case 'f':
-                if (!string_append_char(out, '\f'))
-                    SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
-                break;
             case 'n':
-                if (!string_append_char(out, '\n'))
-                    SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
-                break;
             case 'r':
-                if (!string_append_char(out, '\r'))
-                    SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
-                break;
             case 't':
-                if (!string_append_char(out, '\t'))
-                    SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, end);
+                read(rd);
                 break;
 
             case 'u':
-                    SET_RETVAL_AND_GOTO(JSON_PARSE_NOT_SUPPORTED, end);
+                read(rd); // Skip 'u'
+                for (int i = 0; i < 4; i++) {
+                    if (!is_hex(read(rd)))
+                        return JSON_PARSE_INVALID_ESCAPED_UNICODE;
+                }
+                break;
 
             default:
-                retval = JSON_PARSE_UNEXPECTED_CHARACTER;
-                goto end;
+                return JSON_PARSE_UNEXPECTED_CHARACTER;
             }
-
-            read(rd);
-            break;
-
-        default:
-            printf("%x\n", c);
-            retval = JSON_PARSE_UNEXPECTED_CHARACTER;
-            goto end;
+            continue;
         }
+
+        read(rd);
     }
+
+    *out = malloc(rd->index - start + 1);
+    if (*out == NULL)
+        return JSON_PARSE_MEMORY_ERROR;
+
+    memcpy(*out, rd->bytes + start, rd->index - start);
+    (*out)[rd->index - start] = '\0';
 
     read(rd); // Skip '"'
-
-end:
-    if (retval != JSON_PARSE_OK) {
-        string_free(out);
-    } else if (out->length < out->capacity) {
-        if ((tmp = realloc(out->data, out->length + 1)) == NULL) {
-            string_free(out);
-            retval = JSON_PARSE_MEMORY_ERROR;
-        } else {
-            out->data = tmp;
-        }
-    }
-
-    return retval;
-}
-
-static int parse_string(struct reader *rd, struct json *out)
-{
-    string string = {0};
-    int retval = JSON_PARSE_OK;
-
-    if ((retval = read_string(rd, &string)) != JSON_PARSE_OK)
-        goto end;
-    *out = json_new_string_without_copy(string.data);
-end:
-    return retval;
-}
-
-static int parse_array(struct reader *rd, struct json *array)
-{
-    struct json value = {0};
-    int retval = JSON_PARSE_OK;
-
-    skip_whitespace(rd);
-    if (read(rd) != '[')
-        SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_ARRAY_BEGIN, fail);
-
-    if ((*array = json_new_array()).type == JSON_TYPE_UNKNOWN)
-        SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
-
-    for (;;) {
-        skip_whitespace(rd);
-        if (peek(rd) == ']')
-            break;
-
-        skip_whitespace(rd);
-        if ((retval = parse_value(rd, &value)) != JSON_PARSE_OK)
-            goto fail;
-
-        if (json_array_push(array, &value) == NULL)
-            SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
-
-        skip_whitespace(rd);
-        if (peek(rd) == ']')
-            break;
-        if (read(rd) != ',')
-            SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_VALUE_SEPARATOR, fail);
-
-        skip_whitespace(rd);
-        if (peek(rd) == ']')
-            SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_END_ARRAY, fail);
-    }
-
-    read(rd); // Skip ']'
-    skip_whitespace(rd);
-
-    return retval;
-fail:
-    json_free(array);
-    return retval;
-}
-
-static int parse_number(struct reader *rd, struct json *number)
-{
-    union {
-        uint64_t u;
-        int64_t i;
-        double d;
-    } data;
-    size_t start;
-    bool has_minus = false;
-    bool has_frac = false;
-    bool has_exp = false;
-    int c, retval = JSON_PARSE_OK;
-
-    // Minus part (optional)
-    if (peek(rd) == '-') {
-        has_minus = true;
-        read(rd);
-    }
-
-    // Zero
-    start = rd->index;
-    if (peek(rd) == '0') {
-        read(rd);
-        goto frac;
-    }
-
-    // Integer part
-    if ('1' <= peek(rd) && peek(rd) <= '9') {
-        read(rd);
-
-        while ((c = peek(rd))) {
-            if ('0' <= c && c <= '9')
-                read(rd);
-            else
-                break;
-        }
-    }
-    if (start == rd->index)
-        SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_DIGIT, fail);
-
-frac:
-    // Fraction part (optional)
-    if (peek(rd) == '.') {
-        read(rd);
-
-        while ((c = peek(rd))) {
-            if ('0' <= c && c <= '9') {
-                has_frac = true;
-                read(rd);
-            } else {
-                break;
-            }
-        }
-    }
-    if (!has_frac)
-        goto number;
-
-    // Exponent part (requires fraction part)
-    if ((c = peek(rd)) == 'e' || c == 'E') {
-        has_exp = true;
-        read(rd);
-
-        if ((c = peek(rd)) == '-' || c == '+') {
-            read(rd);
-        }
-
-        if ('0' <= peek(rd) && peek(rd) <= '9')
-            read(rd);
-        else
-            SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_DIGIT, fail);
-
-        while ((c = peek(rd))) {
-            if ('0' <= c && c <= '9')
-                read(rd);
-            else
-                break;
-        }
-    }
-
-number:
-    if (has_exp) {
-        if (!sscanf(&rd->bytes[start], "%le", &data.d))
-            SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_CHARACTER, fail);
-        *number = json_new_double(data.d);
-    } else if (has_frac) {
-        if (!sscanf(&rd->bytes[start], "%lf", &data.d))
-            SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_CHARACTER, fail);
-        *number = json_new_double(data.d);
-    } else {
-        if (has_minus) {
-            if (!sscanf(&rd->bytes[start], "%ld", &data.i))
-                SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_CHARACTER, fail);
-            *number = json_new_signed(data.i);
-        } else {
-            if (!sscanf(&rd->bytes[start], "%lu", &data.u))
-                SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_CHARACTER, fail);
-            *number = json_new_unsigned(data.u);
-        }
-    }
-
-fail:
-    return retval;
+    return JSON_PARSE_OK;
 }
 
 static int parse_value(struct reader *rd, struct json *out)
 {
-    int c, retval = JSON_PARSE_OK;
-
-    switch ((c = peek(rd))) {
+    switch (peek(rd)) {
     case 'f':
         if (strncmp(&rd->bytes[rd->index], "false", 5) != 0)
-            SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_FALSE, end);
-        *out = json_new_boolean(false);
+            return JSON_PARSE_EXPECTED_FALSE;
         rd->index += 5;
+        json_init_boolean(out, false);
         break;
 
     case 'n':
         if (strncmp(&rd->bytes[rd->index], "null", 4) != 0)
-            SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_NULL, end);
-        *out = json_new_null();
+            return JSON_PARSE_EXPECTED_NULL;
         rd->index += 4;
+        json_init_null(out);
         break;
 
     case 't':
         if (strncmp(&rd->bytes[rd->index], "true", 4) != 0)
-            SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_TRUE, end);
-        *out = json_new_boolean(true);
+            return JSON_PARSE_EXPECTED_TRUE;
         rd->index += 4;
+        json_init_boolean(out, true);
         break;
 
     case '{':
-        if ((retval = parse_object(rd, out)) != JSON_PARSE_OK)
-            goto end;
-        break;
+        return parse_object(rd, out);
 
     case '[':
-        if ((retval = parse_array(rd, out)) != JSON_PARSE_OK)
-            goto end;
-        break;
+        return parse_array(rd, out);
 
     case '-':
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-        if ((retval = parse_number(rd, out)) != JSON_PARSE_OK)
-            goto end;
-        break;
+    case '0' ... '9':
+        return parse_number(rd, out);
 
     case '"':
-        if ((retval = parse_string(rd, out)) != JSON_PARSE_OK)
-            goto end;
-        break;
+        return parse_string(rd, out);
 
     default:
-        SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_CHARACTER, end);
+        return JSON_PARSE_UNEXPECTED_CHARACTER;
     }
 
-end:
-    return retval;
+    return JSON_PARSE_OK;
 }
 
-static int parse_object(struct reader *rd, struct json *object)
+static int parse_object(struct reader *rd, struct json *out)
 {
     struct json value = {0};
-    string string;
-    int retval = JSON_PARSE_OK;
+    char *key = NULL;
+    int retval;
 
     skip_whitespace(rd);
     if (read(rd) != '{')
-        SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_BEGIN_OBJECT, fail);
+        return JSON_PARSE_EXPECTED_BEGIN_OBJECT;
 
-    if ((*object = json_new_object()).type == JSON_TYPE_UNKNOWN)
-        SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
+    if ((retval = json_init_object(out)) != 0)
+        return retval;
 
-    for (;;) {
+    while (1) {
         skip_whitespace(rd);
         if (peek(rd) == '}')
             break;
 
         skip_whitespace(rd);
-        memset(&string, 0, sizeof(string));
-        if ((retval = read_string(rd, &string)) != JSON_PARSE_OK)
+        if ((retval = read_string(rd, &key)) != JSON_PARSE_OK)
             goto fail;
 
         skip_whitespace(rd);
@@ -526,11 +231,13 @@ static int parse_object(struct reader *rd, struct json *object)
             SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_NAME_SEPARATOR, fail);
 
         skip_whitespace(rd);
+        value.type = JSON_TYPE_UNKNOWN;
         if ((retval = parse_value(rd, &value)) != JSON_PARSE_OK)
             goto fail;
 
-        if (!json_object_insert_without_copy(object, string.data, &value))
-            SET_RETVAL_AND_GOTO(JSON_PARSE_MEMORY_ERROR, fail);
+        if ((retval = json_internal_object_insert(out, key, &value)) != 0)
+            goto fail;
+        key = NULL; // @out took ownership of @key, so let's not accidentally free it
 
         skip_whitespace(rd);
         if (peek(rd) == '}')
@@ -545,22 +252,138 @@ static int parse_object(struct reader *rd, struct json *object)
 
     read(rd); // Skip '}'
     skip_whitespace(rd);
-
     return retval;
 fail:
-    json_free(object);
+    free(key);
+    json_free(out);
     return retval;
 }
 
-struct json json_parse(const char *bytes)
+static int parse_array(struct reader *rd, struct json *out)
 {
-    return json_parse_ext(bytes, NULL);
+    struct json value = {0};
+    int retval;
+
+    skip_whitespace(rd);
+    if (read(rd) != '[')
+        return JSON_PARSE_EXPECTED_ARRAY_BEGIN;
+
+    if ((retval = json_init_array(out)) != 0)
+        return retval;
+
+    while (1) {
+        skip_whitespace(rd);
+        if (peek(rd) == ']')
+            break;
+
+        skip_whitespace(rd);
+        value.type = JSON_TYPE_UNKNOWN;
+        if ((retval = parse_value(rd, &value)) != JSON_PARSE_OK)
+            goto fail;
+
+        if ((retval = json_array_push(out, &value)) != 0)
+            goto fail;
+
+        skip_whitespace(rd);
+        if (peek(rd) == ']')
+            break;
+        if (read(rd) != ',')
+            SET_RETVAL_AND_GOTO(JSON_PARSE_EXPECTED_VALUE_SEPARATOR, fail);
+
+        skip_whitespace(rd);
+        if (peek(rd) == ']')
+            SET_RETVAL_AND_GOTO(JSON_PARSE_UNEXPECTED_END_ARRAY, fail);
+    }
+
+    read(rd); // Skip ']'
+    skip_whitespace(rd);
+    return retval;
+fail:
+    json_free(out);
+    return retval;
 }
 
-struct json json_parse_ext(const char *bytes, int *error)
+static int parse_number(struct reader *rd, struct json *out)
 {
-    struct json json = {0};
-    int result;
+    size_t start, tmp;
+    bool has_minus = false;
+    bool has_frac = false;
+
+    start = rd->index;
+
+    // Minus part (optional)
+    if (peek(rd) == '-') {
+        has_minus = true;
+        read(rd);
+    }
+
+    // Integer part
+    if (peek(rd) == '0') {
+        read(rd);
+    } else {
+        while ('0' <= peek(rd) && peek(rd) <= '9')
+            read(rd);
+        if (start == rd->index)
+            return JSON_PARSE_EXPECTED_DIGIT;
+    }
+
+    // Fraction part (optional)
+    if (peek(rd) == '.') {
+        has_frac = true;
+        read(rd);
+
+        tmp = rd->index;
+        while ('0' <= peek(rd) && peek(rd) <= '9')
+            read(rd);
+
+        if (tmp == rd->index)
+            return JSON_PARSE_EXPECTED_DIGIT;
+    }
+
+    if (!has_frac)
+        goto integer;
+
+    // Exponent part (requires fraction part)
+    if (peek(rd) == 'e' || peek(rd) == 'E') {
+        read(rd);
+
+        if (peek(rd) == '-' || peek(rd) == '+')
+            read(rd);
+
+        tmp = rd->index;
+        while ('0' <= peek(rd) && peek(rd) <= '9')
+            read(rd);
+
+        if (tmp == rd->index)
+            return JSON_PARSE_EXPECTED_DIGIT;
+    }
+
+    json_init_double(out, strtod(&rd->bytes[start], NULL));
+    return JSON_PARSE_OK;
+
+integer:
+    if (has_minus)
+        json_init_signed(out, strtoll(&rd->bytes[start], NULL, 10));
+    else
+        json_init_unsigned(out, strtoull(&rd->bytes[start], NULL, 10));
+    return JSON_PARSE_OK;
+}
+
+static int parse_string(struct reader *rd, struct json *out)
+{
+    char *string;
+    int retval;
+
+    if ((retval = read_string(rd, &string)) != JSON_PARSE_OK)
+        return retval;
+
+    *out = json_new_string_without_copy(string);
+    return JSON_PARSE_OK;
+}
+
+int json_parse(struct json *json, const char *bytes)
+{
+    int retval;
 
     struct reader rd = {
         .bytes = bytes,
@@ -570,20 +393,10 @@ struct json json_parse_ext(const char *bytes, int *error)
     };
 
     skip_whitespace(&rd);
-    if ((result = parse_value(&rd, &json)) != JSON_PARSE_OK)
-        memset(&json, 0, sizeof(json));
+    retval = parse_value(&rd, json);
 
-    // skip_whitespace(&rd);
-    // if (peek(&rd) != 0) {
-    //     json_free(json);
-    //     json = NULL;
-    //     result = JSON_PARSE_EXPECTED_EOF;
-    // }
+    printf("Status: %s (Ln %zu, Col %zu)\n",
+        parse_result_to_string(retval), rd.ln, rd.col);
 
-    if (error)
-        *error = result;
-
-    printf("Status: %s (Ln %zu, Col %zu)\n", parse_result_to_string(result), rd.ln, rd.col);
-
-    return json;
+    return retval;
 }
