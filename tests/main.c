@@ -25,6 +25,15 @@ int main(void)
     test_declare(json_array_insert);
     test_declare(json_array_remove);
 
+    test_declare(json_set_object);
+    test_declare(json_object_count);
+    test_declare(json_object_capacity);
+    test_declare(json_object_clear);
+    test_declare(json_object_get);
+    test_declare(json_object_insert);
+    test_declare(json_object_overwrite);
+    test_declare(json_object_remove);
+
     // String
     test_declare(string_free);
     test_declare(string_append_char);

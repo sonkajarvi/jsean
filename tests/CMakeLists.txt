@@ -5,6 +5,7 @@ add_executable(tests
 
     json/test_array.c
     json/test_json.c
+    json/test_object.c
     string/test_string.c
 )
 
@@ -15,4 +16,8 @@ target_include_directories(tests PRIVATE
 
 target_link_libraries(tests PRIVATE
     jsean
+)
+
+target_compile_options(tests PRIVATE
+    -g
 )
