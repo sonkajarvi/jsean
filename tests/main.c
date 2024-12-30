@@ -14,7 +14,7 @@ int main(void)
     test_declare(json_set_and_get_double);
     test_declare(json_set_and_get_string);
 
-    test_declare(json_set_array);
+    test_declare(json_init_array);
     test_declare(json_array_length);
     test_declare(json_array_capacity);
     test_declare(json_array_reserve);
@@ -25,7 +25,7 @@ int main(void)
     test_declare(json_array_insert);
     test_declare(json_array_remove);
 
-    test_declare(json_set_object);
+    test_declare(json_init_object);
     test_declare(json_object_count);
     test_declare(json_object_capacity);
     test_declare(json_object_clear);
