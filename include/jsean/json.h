@@ -13,6 +13,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <jsean/string.h>
+
 #ifndef JSON_OBJECT_DEFAULT_CAPACITY
 #define JSON_OBJECT_DEFAULT_CAPACITY 16
 #endif
@@ -94,7 +96,7 @@ struct json json_new_string_without_copy(char *s);
 
 // Parse / generate
 int json_parse(struct json *json, const char *bytes);
-char *json_stringify(struct json *json, const char *indent_s);
+struct string json_stringify(struct json *json, const char *indent);
 
 // Get type of JSON value
 enum json_type json_type(struct json *json);

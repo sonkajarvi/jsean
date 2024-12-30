@@ -5,23 +5,19 @@
 //
 
 #include <stdio.h>
-#include <stdlib.h>
 
 #include <jsean/json.h>
+#include <jsean/string.h>
 
-#include "string.h"
+static void write_value(struct string *str, struct json *json, int indent, const char *indent_s);
 
-#define STRINGIFY_INITIAL_CAPACITY 256
-
-static void write_value(string *str, struct json *json, int indent, const char *indent_s);
-
-static void write_indent(string *str, int indent, const char *indent_s)
+static void write_indent(struct string *str, int indent, const char *indent_s)
 {
     for (int i = 0; i < indent; i++)
         string_append_chars(str, indent_s);
 }
 
-static void write_array(string *str, struct json *json, int indent, const char *indent_s)
+static void write_array(struct string *str, struct json *json, int indent, const char *indent_s)
 {
     string_append_char(str, '[');
     if (indent_s)
@@ -48,7 +44,7 @@ static void write_array(string *str, struct json *json, int indent, const char *
     string_append_char(str, ']');
 }
 
-static void write_object(string *str, struct json *json, int indent, const char *indent_s)
+static void write_object(struct string *str, struct json *json, int indent, const char *indent_s)
 {
     struct json_object *object = json->data._object;
 
@@ -87,7 +83,7 @@ static void write_object(string *str, struct json *json, int indent, const char 
     string_append_char(str, '}');
 }
 
-static void write_value(string *str, struct json *json, int indent, const char *indent_s)
+static void write_value(struct string *str, struct json *json, int indent, const char *indent_s)
 {
     char buf[64];
 
@@ -136,12 +132,11 @@ static void write_value(string *str, struct json *json, int indent, const char *
     }
 }
 
-char *json_stringify(struct json *json, const char *indent_s)
+struct string json_stringify(struct json *json, const char *indent_s)
 {
-    string str = {0};
-    string_reserve(&str, STRINGIFY_INITIAL_CAPACITY);
+    struct string str = {0};
+    string_reserve(&str, 512);
 
     write_value(&str, json, 0, indent_s);
-    str.data = realloc(str.data, str.length + 1);
-    return str.data;
+    return str;
 }
