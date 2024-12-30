@@ -94,3 +94,18 @@ test_case(string_release)
 
     test_success();
 }
+
+test_case(string_shrink)
+{
+    struct string s = {0};
+
+    string_append_chars(&s, "hello, world");
+    string_reserve(&s, 1000);
+
+    test_assert(s.capacity == 1000);
+    string_shrink(&s);
+    test_assert(s.capacity == 13);
+    string_free(&s);
+
+    test_success();
+}

@@ -41,4 +41,5 @@ int main(void)
     test_declare(string_reserve);
     test_declare(string_ref);
     test_declare(string_release);
+    test_declare(string_shrink);
 }

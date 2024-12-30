@@ -96,3 +96,16 @@ char *string_release(struct string *str)
     memset(str, 0, sizeof(*str));
     return tmp;
 }
+
+void string_shrink(struct string *str)
+{
+    if (!str || !str->data || str->length == str->capacity)
+        return;
+
+    char *tmp;
+    if ((tmp = realloc(str->data, str->length + 1)) == NULL)
+        return;
+
+    str->data = tmp;
+    str->capacity = str->length + 1;
+}

@@ -33,4 +33,6 @@ bool string_reserve(struct string *str, const size_t n);
 const char *string_ref(struct string *str);
 char *string_release(struct string *str);
 
+void string_shrink(struct string *str);
+
 #endif // JSEAN_STRING_H
