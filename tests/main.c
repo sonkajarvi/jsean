@@ -39,4 +39,6 @@ int main(void)
     test_declare(string_append_char);
     test_declare(string_append_chars_n);
     test_declare(string_reserve);
+    test_declare(string_ref);
+    test_declare(string_release);
 }
