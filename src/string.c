@@ -10,9 +10,7 @@
 
 #include "string.h"
 
-#define STRING_INITIAL_CAPACITY 16
-
-void string_free(string *str)
+void string_free(struct string *str)
 {
     if (!str)
         return;
@@ -21,7 +19,7 @@ void string_free(string *str)
     memset(str, 0, sizeof(*str));
 }
 
-bool string_append_char(string *str, char c)
+bool string_append_char(struct string *str, char c)
 {
     if (!str || !c)
         return false;
@@ -30,7 +28,7 @@ bool string_append_char(string *str, char c)
     if (str->length + 1 < str->capacity)
         goto skip_realloc;
 
-    str->capacity = 2 * str->capacity ?: STRING_INITIAL_CAPACITY;
+    str->capacity = 2 * str->capacity ?: STRING_DEFAULT_CAPACITY;
     if ((tmp = realloc(tmp, str->capacity)) == NULL)
         return false;
     str->data = tmp;
@@ -41,12 +39,12 @@ skip_realloc:
     return true;
 }
 
-bool string_append_chars(string *str, const char *s)
+bool string_append_chars(struct string *str, const char *s)
 {
     return string_append_chars_n(str, s, strlen(s));
 }
 
-bool string_append_chars_n(string *str, const char *s, const size_t n)
+bool string_append_chars_n(struct string *str, const char *s, const size_t n)
 {
     if (!str || !s || !s[0] || !n)
         return false;
@@ -56,7 +54,7 @@ bool string_append_chars_n(string *str, const char *s, const size_t n)
         goto skip_realloc;
 
     while (str->capacity < str->length + n)
-        str->capacity = 2 * str->capacity ?: STRING_INITIAL_CAPACITY;
+        str->capacity = 2 * str->capacity ?: STRING_DEFAULT_CAPACITY;
 
     if ((tmp = realloc(tmp, str->capacity)) == NULL)
         return false;
@@ -69,7 +67,7 @@ skip_realloc:
     return true;
 }
 
-bool string_reserve(string *str, const size_t n)
+bool string_reserve(struct string *str, const size_t n)
 {
     if (!str || n <= str->capacity)
         return false;
@@ -81,4 +79,20 @@ bool string_reserve(string *str, const size_t n)
     str->data = tmp;
     str->capacity = n;
     return true;
+}
+
+
+const char *string_ref(struct string *str)
+{
+    return str ? str->data : NULL;
+}
+
+char *string_release(struct string *str)
+{
+    if (!str)
+        return NULL;
+
+    char *tmp = str->data;
+    memset(str, 0, sizeof(*str));
+    return tmp;
 }
