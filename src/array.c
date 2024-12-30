@@ -12,8 +12,6 @@
 
 #include <jsean/json.h>
 
-#define ARRAY_INITIAL_CAPACITY 16
-
 static struct json_array *to_array(struct json *json)
 {
     if (!json || json->type != JSON_TYPE_ARRAY)
@@ -25,9 +23,6 @@ static struct json_array *to_array(struct json *json)
 static struct json_array *array_resize(struct json *json,
     struct json_array *array, size_t new_cap)
 {
-    if (new_cap < ARRAY_INITIAL_CAPACITY)
-        new_cap = ARRAY_INITIAL_CAPACITY;
-
     struct json_array *tmp;
     tmp = realloc(array, sizeof(struct json_array) + new_cap * sizeof(struct json));
     if (!tmp)
@@ -40,7 +35,7 @@ fail:
     return tmp;
 }
 
-int json_init_array(struct json *json)
+int json_init_array(struct json *json, const size_t n)
 {
     if (!json)
         return EFAULT;
@@ -51,7 +46,7 @@ int json_init_array(struct json *json)
         json->type = JSON_TYPE_ARRAY;
 
         struct json_array *array = to_array(json);
-        if (!(array = array_resize(json, array, ARRAY_INITIAL_CAPACITY)))
+        if (!(array = array_resize(json, array, n ?: JSON_ARRAY_DEFAULT_CAPACITY)))
             return ENOMEM;
 
         array->length = 0;

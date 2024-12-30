@@ -135,7 +135,7 @@ bool json_boolean(struct json *json)
     return 0;
 }
 
-int json_init_signed(struct json *json, int64_t i)
+int json_set_signed(struct json *json, int64_t i)
 {
     if (!json)
         return EFAULT;
@@ -178,7 +178,7 @@ int64_t json_signed(struct json *json)
     return 0;
 }
 
-int json_init_unsigned(struct json *json, uint64_t u)
+int json_set_unsigned(struct json *json, uint64_t u)
 {
     if (!json)
         return EFAULT;
@@ -221,7 +221,7 @@ uint64_t json_unsigned(struct json *json)
     return 0;
 }
 
-int json_init_double(struct json *json, double d)
+int json_set_double(struct json *json, double d)
 {
     if (!json)
         return EFAULT;
@@ -271,7 +271,7 @@ struct json json_new_string_without_copy(char *s)
     return json;
 }
 
-int json_init_string(struct json *json, const char *s)
+int json_set_string(struct json *json, const char *s)
 {
     if (!json || !s)
         return EFAULT;

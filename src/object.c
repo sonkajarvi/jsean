@@ -12,7 +12,6 @@
 
 #include <jsean/json.h>
 
-#define OBJECT_INITIAL_CAPACITY     16
 #define OBJECT_LOAD_FACTOR_MAX      0.8
 #define OBJECT_LOAD_FACTOR_MIN      0.2
 
@@ -70,9 +69,6 @@ static size_t json_object_index_of(struct json *json, const char *key)
 static struct json_object *object_resize(struct json *json,
     struct json_object *object, size_t new_cap)
 {
-    if (new_cap < OBJECT_INITIAL_CAPACITY)
-        new_cap = OBJECT_INITIAL_CAPACITY;
-
     const size_t old_cap = object ? object->capacity : 0;
 
     struct json_object *tmp;
@@ -118,7 +114,7 @@ static bool object_rehash(struct json_object *object, const size_t new_cap)
     return true;
 }
 
-int json_init_object(struct json *json)
+int json_init_object(struct json *json, const size_t n)
 {
     if (!json)
         return EFAULT;
@@ -129,7 +125,7 @@ int json_init_object(struct json *json)
         json->type = JSON_TYPE_OBJECT;
 
         struct json_object *object = to_object(json);
-        if (!(object = object_resize(json, object, OBJECT_INITIAL_CAPACITY)))
+        if (!(object = object_resize(json, object, n ?: JSON_OBJECT_DEFAULT_CAPACITY)))
             return ENOMEM;
 
         memset(json_object_buffer(object), 0,

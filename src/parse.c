@@ -216,7 +216,7 @@ static int parse_object(struct reader *rd, struct json *out)
     if (read(rd) != '{')
         return JSON_PARSE_EXPECTED_BEGIN_OBJECT;
 
-    if ((retval = json_init_object(out)) != 0)
+    if ((retval = json_init_object(out, 0)) != 0)
         return retval;
 
     while (1) {
@@ -270,7 +270,7 @@ static int parse_array(struct reader *rd, struct json *out)
     if (read(rd) != '[')
         return JSON_PARSE_EXPECTED_ARRAY_BEGIN;
 
-    if ((retval = json_init_array(out)) != 0)
+    if ((retval = json_init_array(out, 0)) != 0)
         return retval;
 
     while (1) {
@@ -360,14 +360,14 @@ static int parse_number(struct reader *rd, struct json *out)
             return JSON_PARSE_EXPECTED_DIGIT;
     }
 
-    json_init_double(out, strtod(&rd->bytes[start], NULL));
+    json_set_double(out, strtod(&rd->bytes[start], NULL));
     return JSON_PARSE_OK;
 
 integer:
     if (has_minus)
-        json_init_signed(out, strtoll(&rd->bytes[start], NULL, 10));
+        json_set_signed(out, strtoll(&rd->bytes[start], NULL, 10));
     else
-        json_init_unsigned(out, strtoull(&rd->bytes[start], NULL, 10));
+        json_set_unsigned(out, strtoull(&rd->bytes[start], NULL, 10));
     return JSON_PARSE_OK;
 }
 
