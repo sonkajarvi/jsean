@@ -11,13 +11,6 @@
 
 #include <jsean/json.h>
 
-static void string_free(struct json *json)
-{
-    char *s;
-    if ((s = json_string(json)))
-        free(s);
-}
-
 static void array_free(struct json *json)
 {
     struct json_array *array;
@@ -68,7 +61,7 @@ void json_free(struct json *json)
         return;
 
     if (json->type == JSON_TYPE_STRING)
-        string_free(json);
+        free(json_string(json));
     else if (json->type == JSON_TYPE_ARRAY)
         array_free(json);
     else if (json->type == JSON_TYPE_OBJECT)

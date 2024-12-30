@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "string.h"
+#include <jsean/string.h>
 
 void string_free(struct string *str)
 {

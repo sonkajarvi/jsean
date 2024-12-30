@@ -3,7 +3,7 @@
 
 #include <test.h>
 
-#include "../../src/string.h"
+#include <jsean/string.h>
 
 #define LARGE 100000
 

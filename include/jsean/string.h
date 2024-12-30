@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: MIT
 //
 
-#ifndef STRING_H
-#define STRING_H
+#ifndef JSEAN_STRING_H
+#define JSEAN_STRING_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -33,4 +33,4 @@ bool string_reserve(struct string *str, const size_t n);
 const char *string_ref(struct string *str);
 char *string_release(struct string *str);
 
-#endif // STRING_H
+#endif // JSEAN_STRING_H
