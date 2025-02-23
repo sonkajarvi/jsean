@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2024, sonkajarvi
+// Copyright (c) 2024-2025, sonkajarvi
 //
 // SPDX-License-Identifier: MIT
 //
@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <jsean/json.h>
+#include <jsean/JSON.h>
 
 #define SET_RETVAL_AND_GOTO(x, label) { retval = x; goto label; }
 
@@ -70,11 +70,11 @@ struct reader
 
 static int read_string(struct reader *rd, char **out);
 
-static int parse_value(struct reader *rd, struct json *out);
-static int parse_object(struct reader *rd, struct json *out);
-static int parse_array(struct reader *rd, struct json *out);
-static int parse_number(struct reader *rd, struct json *out);
-static int parse_string(struct reader *rd, struct json *out);
+static int parse_value(struct reader *rd, JSON *out);
+static int parse_object(struct reader *rd, JSON *out);
+static int parse_array(struct reader *rd, JSON *out);
+static int parse_number(struct reader *rd, JSON *out);
+static int parse_string(struct reader *rd, JSON *out);
 
 static inline char peek(struct reader *rd)
 {
@@ -162,7 +162,7 @@ static int read_string(struct reader *rd, char **out)
     return JSON_PARSE_OK;
 }
 
-static int parse_value(struct reader *rd, struct json *out)
+static int parse_value(struct reader *rd, JSON *out)
 {
     switch (peek(rd)) {
     case 'f':
@@ -206,9 +206,9 @@ static int parse_value(struct reader *rd, struct json *out)
     return JSON_PARSE_OK;
 }
 
-static int parse_object(struct reader *rd, struct json *out)
+static int parse_object(struct reader *rd, JSON *out)
 {
-    struct json value = {0};
+    JSON value = {0};
     char *key = NULL;
     int retval;
 
@@ -261,9 +261,9 @@ fail:
     return retval;
 }
 
-static int parse_array(struct reader *rd, struct json *out)
+static int parse_array(struct reader *rd, JSON *out)
 {
-    struct json value = {0};
+    JSON value = {0};
     int retval;
 
     skip_whitespace(rd);
@@ -305,17 +305,15 @@ fail:
     return retval;
 }
 
-static int parse_number(struct reader *rd, struct json *out)
+static int parse_number(struct reader *rd, JSON *out)
 {
     size_t start, tmp;
-    bool has_minus = false;
     bool has_frac = false;
 
     start = rd->index;
 
     // Minus part (optional)
     if (peek(rd) == '-') {
-        has_minus = true;
         read(rd);
     }
 
@@ -343,7 +341,7 @@ static int parse_number(struct reader *rd, struct json *out)
     }
 
     if (!has_frac)
-        goto integer;
+        goto skip_exp;
 
     // Exponent part (requires fraction part)
     if (peek(rd) == 'e' || peek(rd) == 'E') {
@@ -360,18 +358,12 @@ static int parse_number(struct reader *rd, struct json *out)
             return JSON_PARSE_EXPECTED_DIGIT;
     }
 
-    json_set_double(out, strtod(&rd->bytes[start], NULL));
-    return JSON_PARSE_OK;
-
-integer:
-    if (has_minus)
-        json_set_signed(out, strtoll(&rd->bytes[start], NULL, 10));
-    else
-        json_set_unsigned(out, strtoull(&rd->bytes[start], NULL, 10));
+skip_exp:
+    json_set_number(out, strtod(&rd->bytes[start], NULL));
     return JSON_PARSE_OK;
 }
 
-static int parse_string(struct reader *rd, struct json *out)
+static int parse_string(struct reader *rd, JSON *out)
 {
     char *string;
     int retval;
@@ -383,7 +375,7 @@ static int parse_string(struct reader *rd, struct json *out)
     return JSON_PARSE_OK;
 }
 
-int json_parse(struct json *json, const char *bytes)
+int json_parse(JSON *json, const char *bytes)
 {
     int retval;
 

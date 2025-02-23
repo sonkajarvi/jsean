@@ -5,18 +5,18 @@
 ```c
 #include <stdio.h>
 
-#include <jsean/json.h>
+#include <jsean/JSON.h>
 #include <jsean/string.h>
 
 int main(void)
 {
     // Parse string to JSON value
     const char *in = "{\"version\":89}";
-    struct json json = {0};
+    json_t json = {0};
     json_parse(&json, in);
 
     // Modify JSON value
-    struct json *value = json_object_get(&json, "version");
+    json_t *value = JSON_object_get(&json, "version");
     json_set_unsigned(value, json_unsigned(value) - 78);
 
     // Stringify JSON value to string

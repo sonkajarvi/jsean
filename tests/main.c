@@ -9,8 +9,6 @@ int main(void)
     test_declare(json_type);
     test_declare(json_set_null);
     test_declare(json_set_and_get_boolean);
-    test_declare(json_set_and_get_signed);
-    test_declare(json_set_and_get_unsigned);
     test_declare(json_set_and_get_double);
     test_declare(json_set_and_get_string);
 
@@ -26,13 +24,13 @@ int main(void)
     test_declare(json_array_remove);
 
     test_declare(json_init_object);
-    test_declare(json_object_count);
-    test_declare(json_object_capacity);
-    test_declare(json_object_clear);
-    test_declare(json_object_get);
-    test_declare(json_object_insert);
-    test_declare(json_object_overwrite);
-    test_declare(json_object_remove);
+    test_declare(JSON_object_count);
+    test_declare(JSON_object_capacity);
+    test_declare(JSON_object_clear);
+    test_declare(JSON_object_get);
+    test_declare(JSON_object_insert);
+    test_declare(JSON_object_overwrite);
+    test_declare(JSON_object_remove);
 
     // String
     test_declare(string_free);

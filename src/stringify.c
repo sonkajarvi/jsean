@@ -1,15 +1,15 @@
 //
-// Copyright (c) 2024, sonkajarvi
+// Copyright (c) 2024-2025, sonkajarvi
 //
 // SPDX-License-Identifier: MIT
 //
 
 #include <stdio.h>
 
-#include <jsean/json.h>
+#include <jsean/JSON.h>
 #include <jsean/string.h>
 
-static void write_value(struct string *str, struct json *json, int indent, const char *indent_s);
+static void write_value(struct string *str, JSON *json, int indent, const char *indent_s);
 
 static void write_indent(struct string *str, int indent, const char *indent_s)
 {
@@ -17,7 +17,7 @@ static void write_indent(struct string *str, int indent, const char *indent_s)
         string_append_chars(str, indent_s);
 }
 
-static void write_array(struct string *str, struct json *json, int indent, const char *indent_s)
+static void write_array(struct string *str, JSON *json, int indent, const char *indent_s)
 {
     string_append_char(str, '[');
     if (indent_s)
@@ -44,15 +44,15 @@ static void write_array(struct string *str, struct json *json, int indent, const
     string_append_char(str, ']');
 }
 
-static void write_object(struct string *str, struct json *json, int indent, const char *indent_s)
+static void write_object(struct string *str, JSON *json, int indent, const char *indent_s)
 {
-    struct json_object *object = json->data._object;
+    struct JSON_object *object = json->data._object;
 
     string_append_char(str, '{');
     if (indent_s)
         string_append_char(str, '\n');
 
-    struct json_object_entry *buffer = json_object_buffer(object);
+    struct JSON_object_entry *buffer = JSON_object_buffer(object);
     for (size_t i = 0, j = object->count; j; i++) {
         if (!buffer[i].key)
             continue;
@@ -83,7 +83,7 @@ static void write_object(struct string *str, struct json *json, int indent, cons
     string_append_char(str, '}');
 }
 
-static void write_value(struct string *str, struct json *json, int indent, const char *indent_s)
+static void write_value(struct string *str, JSON *json, int indent, const char *indent_s)
 {
     char buf[64];
 
@@ -103,12 +103,7 @@ static void write_value(struct string *str, struct json *json, int indent, const
         break;
 
     case JSON_TYPE_NUMBER:
-        if (json->number_type == JSON_NUMBER_SIGNED)
-            snprintf(buf, sizeof(buf), "%ld", json->data._signed);
-        else if (json->number_type == JSON_NUMBER_UNSIGNED)
-            snprintf(buf, sizeof(buf), "%lu", json->data._unsigned);
-        else
-            snprintf(buf, sizeof(buf), "%f", json->data._double);
+        snprintf(buf, sizeof(buf), "%f", json->data._double);
         string_append_chars(str, buf);
         break;
 
@@ -132,7 +127,7 @@ static void write_value(struct string *str, struct json *json, int indent, const
     }
 }
 
-struct string json_stringify(struct json *json, const char *indent_s)
+struct string json_stringify(JSON *json, const char *indent_s)
 {
     struct string str = {0};
     string_reserve(&str, 512);
