@@ -169,21 +169,21 @@ static int parse_value(struct reader *rd, JSON *out)
         if (strncmp(&rd->bytes[rd->index], "false", 5) != 0)
             return JSON_PARSE_EXPECTED_FALSE;
         rd->index += 5;
-        json_init_boolean(out, false);
+        JSON_set_boolean(out, false);
         break;
 
     case 'n':
         if (strncmp(&rd->bytes[rd->index], "null", 4) != 0)
             return JSON_PARSE_EXPECTED_NULL;
         rd->index += 4;
-        json_init_null(out);
+        JSON_set_null(out);
         break;
 
     case 't':
         if (strncmp(&rd->bytes[rd->index], "true", 4) != 0)
             return JSON_PARSE_EXPECTED_TRUE;
         rd->index += 4;
-        json_init_boolean(out, true);
+        JSON_set_boolean(out, true);
         break;
 
     case '{':
@@ -257,7 +257,7 @@ static int parse_object(struct reader *rd, JSON *out)
     return retval;
 fail:
     free(key);
-    json_free(out);
+    JSON_free(out);
     return retval;
 }
 
@@ -301,7 +301,7 @@ static int parse_array(struct reader *rd, JSON *out)
     skip_whitespace(rd);
     return retval;
 fail:
-    json_free(out);
+    JSON_free(out);
     return retval;
 }
 
@@ -359,7 +359,7 @@ static int parse_number(struct reader *rd, JSON *out)
     }
 
 skip_exp:
-    json_set_number(out, strtod(&rd->bytes[start], NULL));
+    JSON_set_number(out, strtod(&rd->bytes[start], NULL));
     return JSON_PARSE_OK;
 }
 
@@ -371,7 +371,7 @@ static int parse_string(struct reader *rd, JSON *out)
     if ((retval = read_string(rd, &string)) != JSON_PARSE_OK)
         return retval;
 
-    *out = json_new_string_without_copy(string);
+    JSON_move_string(out, string);
     return JSON_PARSE_OK;
 }
 

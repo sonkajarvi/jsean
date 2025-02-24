@@ -5,12 +5,13 @@
 int main(void)
 {
     // JSON
-    test_declare(JSON_move);
     test_declare(JSON_type);
-    test_declare(json_set_null);
-    test_declare(json_set_and_get_boolean);
-    test_declare(json_set_and_get_double);
-    test_declare(json_set_and_get_string);
+    test_declare(JSON_move);
+    test_declare(JSON_free);
+    test_declare(JSON_set_null);
+    test_declare(JSON_set_and_get_boolean);
+    test_declare(JSON_set_and_get_double);
+    test_declare(JSON_set_and_get_string);
 
     test_declare(JSON_set_array);
     test_declare(JSON_array_size);

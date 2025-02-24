@@ -19,7 +19,7 @@ static void array_free(JSON *json)
         return;
 
     for (size_t i = 0; i < array->length; i++)
-        json_free(JSON_array_at(json, i));
+        JSON_free(JSON_array_at(json, i));
 
     free(array->data);
     free(array);
@@ -34,20 +34,12 @@ static void object_free(JSON *json)
     struct JSON_object_entry *buffer = JSON_object_buffer(object);
     for (size_t i = 0; i < object->capacity; i++) {
         if (buffer[i].key) {
-            json_free(&buffer[i].value);
+            JSON_free(&buffer[i].value);
             free(buffer[i].key);
         }
     }
 
     free(object);
-}
-
-void JSON_move(void *lhs, const void *rhs)
-{
-    if (!lhs || !rhs)
-        return;
-
-    memcpy(lhs, rhs, sizeof(JSON));
 }
 
 enum JSON_type JSON_type(const JSON *json)
@@ -58,42 +50,43 @@ enum JSON_type JSON_type(const JSON *json)
     return json->type;
 }
 
-void json_free(JSON *json)
+void JSON_move(void *lhs, const void *rhs)
+{
+    if (!lhs || JSON_type(rhs) == JSON_TYPE_UNKNOWN)
+        return;
+
+    memcpy(lhs, rhs, sizeof(JSON));
+}
+
+void JSON_free(JSON *json)
 {
     if (!json)
         return;
 
     if (json->type == JSON_TYPE_STRING)
-        free(json_string(json));
+        free(JSON_string(json));
     else if (json->type == JSON_TYPE_ARRAY)
         array_free(json);
     else if (json->type == JSON_TYPE_OBJECT)
         object_free(json);
 
-    json->type = JSON_TYPE_UNKNOWN;
+    JSON_set_null(json);
 }
 
-JSON json_new_null(void)
-{
-    JSON json;
-    json.type = JSON_TYPE_NULL;
-    return json;
-}
-
-int json_init_null(JSON *json)
+int JSON_set_null(JSON *json)
 {
     if (!json)
-        return EFAULT;
+        return EINVAL;
 
     json->type = JSON_TYPE_NULL;
 
     return 0;
 }
 
-int json_init_boolean(JSON *json, bool b)
+int JSON_set_boolean(JSON *json, const bool b)
 {
     if (!json)
-        return EFAULT;
+        return EINVAL;
 
     json->data._boolean = b;
     json->type = JSON_TYPE_BOOLEAN;
@@ -101,7 +94,7 @@ int json_init_boolean(JSON *json, bool b)
     return 0;
 }
 
-bool json_boolean(JSON *json)
+bool JSON_boolean(const JSON *json)
 {
     if (!json)
         return 0;
@@ -115,10 +108,10 @@ bool json_boolean(JSON *json)
     return 0;
 }
 
-int json_set_number(JSON *json, double d)
+int JSON_set_number(JSON *json, const double d)
 {
     if (!json)
-        return EFAULT;
+        return EINVAL;
 
     json->data._double = d;
     json->type = JSON_TYPE_NUMBER;
@@ -126,7 +119,7 @@ int json_set_number(JSON *json, double d)
     return 0;
 }
 
-double json_number(JSON *json)
+double JSON_number(const JSON *json)
 {
     if (!json)
         return 0.0;
@@ -140,28 +133,29 @@ double json_number(JSON *json)
     return 0.0;
 }
 
-// Internal
-JSON json_new_string_without_copy(char *s)
-{
-    JSON json;
-    json.type = JSON_TYPE_STRING;
-    json.data._string = s;
-    return json;
-}
-
-int json_set_string(JSON *json, const char *s)
+int JSON_set_string(JSON *json, const char *s)
 {
     if (!json || !s)
-        return EFAULT;
+        return EINVAL;
 
-    json_free(json);
     json->type = JSON_TYPE_STRING;
     json->data._string = strdup(s);
 
     return 0;
 }
 
-char *json_string(JSON *json)
+int JSON_move_string(JSON *json, char *s)
+{
+    if (!json || !s)
+        return EINVAL;
+
+    json->type = JSON_TYPE_STRING;
+    json->data._string = s;
+
+    return 0;
+}
+
+char *JSON_string(JSON *json)
 {
     if (!json || json->type != JSON_TYPE_STRING)
         return NULL;

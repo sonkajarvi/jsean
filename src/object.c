@@ -120,7 +120,7 @@ int json_init_object(JSON *json, const size_t n)
         return EFAULT;
 
     if (json->type != JSON_TYPE_OBJECT) {
-        json_free(json);
+        JSON_free(json);
         json->data._object = NULL;
         json->type = JSON_TYPE_OBJECT;
 
@@ -164,7 +164,7 @@ void JSON_object_clear(JSON *json)
     for (size_t i = 0; i < object->capacity; i++) {
         if (!is_empty(object, i)) {
             free(buffer[i].key);
-            json_free(&buffer[i].value);
+            JSON_free(&buffer[i].value);
             buffer[i].key = NULL;
         }
     }
@@ -276,7 +276,7 @@ void JSON_object_remove(JSON *json, const char *key)
     struct JSON_object_entry *buffer = JSON_object_buffer(object);
     free(buffer[index].key);
     buffer[index].key = NULL;
-    json_free(&buffer[index].value);
+    JSON_free(&buffer[index].value);
     object->count--;
 
     // Rehash and halve the capacity if needed
