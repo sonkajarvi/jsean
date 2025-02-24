@@ -80,12 +80,18 @@ test_case(JSON_array_reserve)
 
     // Less than current capacity
     JSON_set_array(&a, 10);
-    test_assert(JSON_array_reserve(&a, 0) == EINVAL);
+    test_assert(JSON_array_reserve(&a, 1) == EINVAL);
     test_assert(JSON_array_capacity(&a) == 10);
 
     // More than current capacity
     test_assert(JSON_array_reserve(&a, 100) == 0);
     test_assert(JSON_array_capacity(&a) == 100);
+    JSON_free(&a);
+
+    // Reserve default
+    JSON_set_array(&a, 1);
+    test_assert(JSON_array_reserve(&a, 0) == 0);
+    test_assert(JSON_array_capacity(&a) == JSON_ARRAY_DEFAULT_CAPACITY);
     JSON_free(&a);
 
     test_success();

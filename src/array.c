@@ -63,19 +63,17 @@ size_t JSON_array_capacity(const JSON *json)
     return array->capacity;
 }
 
-int JSON_array_reserve(JSON *json, const size_t cap)
+int JSON_array_reserve(JSON *json, size_t cap)
 {
     struct json_array *array;
     JSON *tmp;
 
-    if (cap == 0)
-        return EINVAL;
-
     if ((array = JSON_array(json)) == NULL)
         return EINVAL;
 
+    cap = cap ?: JSON_ARRAY_DEFAULT_CAPACITY;
     if (cap <= array->capacity)
-        return 0;
+        return EINVAL;
 
     if ((tmp = realloc(array->data, sizeof(*array->data) * cap)) == NULL)
         return ENOMEM;

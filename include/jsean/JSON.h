@@ -110,7 +110,7 @@ int json_internal_object_insert(JSON *json, char *key, JSON *other);
 int JSON_set_array(JSON *json, size_t cap);
 size_t JSON_array_size(const JSON *json);
 size_t JSON_array_capacity(const JSON *json);
-int JSON_array_reserve(JSON *json, const size_t cap);
+int JSON_array_reserve(JSON *json, size_t cap);
 void JSON_array_clear(JSON *json);
 JSON *JSON_array_at(const JSON *json, const size_t idx);
 int JSON_array_push(JSON *json, const JSON *val);
