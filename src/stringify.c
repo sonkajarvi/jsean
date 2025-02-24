@@ -23,7 +23,7 @@ static void write_array(struct string *str, JSON *json, int indent, const char *
     if (indent_s)
         string_append_char(str, '\n');
 
-    const size_t len = json_array_length(json);
+    const size_t len = JSON_array_size(json);
     for (size_t i = 0; i < len; i++) {
         if (i > 0) {
             string_append_char(str, ',');
@@ -33,7 +33,7 @@ static void write_array(struct string *str, JSON *json, int indent, const char *
 
         if (indent_s)
             write_indent(str, indent + 1, indent_s);
-        write_value(str, json_array_at(json, i), indent + 1, indent_s);
+        write_value(str, JSON_array_at(json, i), indent + 1, indent_s);
     }
 
     if (indent_s) {

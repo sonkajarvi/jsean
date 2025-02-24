@@ -12,7 +12,7 @@
 
 #include <jsean/JSON.h>
 
-static struct json_array *to_array(JSON *json)
+static struct json_array *to_array(const JSON *json)
 {
     if (!json || json->type != JSON_TYPE_ARRAY)
         return NULL;
@@ -20,170 +20,172 @@ static struct json_array *to_array(JSON *json)
     return json->data._array;
 }
 
-static struct json_array *array_resize(JSON *json,
-    struct json_array *array, size_t new_cap)
+int JSON_set_array(JSON *json, size_t capacity)
 {
-    struct json_array *tmp;
-    tmp = realloc(array, sizeof(struct json_array) + new_cap * sizeof(JSON));
-    if (!tmp)
-        goto fail;
+    struct json_array *array;
 
-    tmp->capacity = new_cap;
-    json->data._array = tmp;
-
-fail:
-    return tmp;
-}
-
-int json_init_array(JSON *json, const size_t n)
-{
     if (!json)
-        return EFAULT;
+        return EINVAL;
 
-    if (json->type != JSON_TYPE_ARRAY) {
-        json_free(json);
-        json->data._array = NULL;
-        json->type = JSON_TYPE_ARRAY;
+    if ((array = malloc(sizeof(*array))) == NULL)
+        return ENOMEM;
 
-        struct json_array *array = to_array(json);
-        if (!(array = array_resize(json, array, n ?: JSON_ARRAY_DEFAULT_CAPACITY)))
-            return ENOMEM;
+    capacity = capacity ?: JSON_ARRAY_DEFAULT_CAPACITY;
+    if ((array->data = malloc(sizeof(*array->data) * capacity)) == NULL)
+        return ENOMEM;
 
-        array->length = 0;
-    }
+    array->capacity = capacity;
+    array->length = 0;
+
+    json->data._array = array;
+    json->type = JSON_TYPE_ARRAY;
 
     return 0;
 }
 
-size_t json_array_length(JSON *json)
+size_t JSON_array_size(const JSON *json)
 {
     struct json_array *array;
-    if (!(array = to_array(json)))
+
+    if ((array = to_array(json)) == NULL)
         return 0;
 
     return array->length;
 }
 
-size_t json_array_capacity(JSON *json)
+size_t JSON_array_capacity(const JSON *json)
 {
     struct json_array *array;
-    if (!(array = to_array(json)))
+
+    if ((array = to_array(json)) == NULL)
         return 0;
 
     return array->capacity;
 }
 
-int json_array_reserve(JSON *json, const size_t n)
+int JSON_array_reserve(JSON *json, const size_t capacity)
 {
     struct json_array *array;
-    if (!(array = to_array(json)))
-        return EFAULT;
+    JSON *tmp;
 
-    if (n == 0)
+    if (capacity == 0)
         return EINVAL;
 
-    if (n <= array->capacity)
+    if ((array = to_array(json)) == NULL)
+        return EINVAL;
+
+    if (capacity <= array->capacity)
         return 0;
 
-    if (!(array = array_resize(json, array, n)))
+    if ((tmp = realloc(array->data, sizeof(*array->data) * capacity)) == NULL)
         return ENOMEM;
+
+    array->data = tmp;
+    array->capacity = capacity;
 
     return 0;
 }
 
-void json_array_clear(JSON *json)
+void JSON_array_clear(JSON *json)
 {
     struct json_array *array;
-    if (!(array = to_array(json)))
+
+    if ((array = to_array(json)) == NULL)
         return;
 
     for (size_t i = 0; i < array->length; i++)
-        json_free(&json_array_buffer(array)[i]);
+        json_free(JSON_array_at(json, i));
 
     array->length = 0;
 }
 
-JSON *json_array_at(JSON *json, size_t i)
+JSON *JSON_array_at(const JSON *json, const size_t index)
 {
     struct json_array *array;
-    if (!(array = to_array(json)) || i >= array->length)
+
+    if ((array = to_array(json)) == NULL || index >= array->length)
         return NULL;
 
-    return &json_array_buffer(array)[i];
+    return &array->data[index];
 }
 
-int json_array_push(JSON *json, JSON *value)
+int JSON_array_push(JSON *json, const JSON *value)
 {
     struct json_array *array;
-    if (!json || !value)
-        return EFAULT;
+    int retval;
 
-    if (!(array = to_array(json)) || json_type(value) == JSON_TYPE_UNKNOWN)
+    if ((array = to_array(json)) == NULL)
+        return EINVAL;
+
+    if (JSON_type(value) == JSON_TYPE_UNKNOWN)
         return EINVAL;
 
     // Allocate more memory when needed
-    if (array->length >= array->capacity &&
-        !(array = array_resize(json, array, 2 * array->capacity)))
-            return ENOMEM;
+    if (array->length >= array->capacity) {
+        if ((retval = JSON_array_reserve(json, array->capacity * 2)) != 0)
+            return retval;
+    }
 
-    json_move(&json_array_buffer(array)[array->length], value);
+    array = to_array(json);
+    JSON_move(&array->data[array->length], value);
     array->length++;
 
     return 0;
 }
 
-void json_array_pop(JSON *json)
+void JSON_array_pop(JSON *json)
 {
     struct json_array *array;
-    if (!(array = to_array(json)) || array->length == 0)
+
+    if ((array = to_array(json)) == NULL || array->length == 0)
         return;
 
-    json_free(&json_array_buffer(array)[array->length - 1]);
+    json_free(&array->data[array->length - 1]);
     array->length--;
-
-    if (array->length < array->capacity / 4)
-        array_resize(json, array, array->capacity / 2);
 }
 
-int json_array_insert(JSON *json, size_t i, JSON *value)
+int JSON_array_insert(JSON *json, const size_t index, const JSON *value)
 {
     struct json_array *array;
-    if (!json || !value)
-        return EFAULT;
+    int retval;
 
-    if (!(array = to_array(json)) || i > array->length ||
-        json_type(value) == JSON_TYPE_UNKNOWN)
+    if ((array = to_array(json)) == NULL || index > array->length)
         return EINVAL;
 
-    if (i == array->length)
-        return json_array_push(json, value);
+    if (JSON_type(value) == JSON_TYPE_UNKNOWN)
+        return EINVAL;
+
+    if (index == array->length)
+        return JSON_array_push(json, value);
 
     // Allocate more memory when needed
-    if (array->length >= array->capacity &&
-        !(array = array_resize(json, array, 2 * array->capacity)))
+    if (array->length >= array->capacity) {
+        if ((retval = JSON_array_reserve(json, array->capacity * 2)) != 0)
             return ENOMEM;
+    }
 
     // Shift elements to the right
-    memcpy(&json_array_buffer(array)[i + 1], &json_array_buffer(array)[i],
-        (array->length - i) * sizeof(JSON));
+    memcpy(&array->data[index + 1], &array->data[index],
+        (array->length - index) * sizeof(*array->data));
 
-    json_move(&json_array_buffer(array)[i], value);
+    JSON_move(&array->data[index], value);
     array->length++;
 
     return 0;
 }
 
-void json_array_remove(JSON *json, size_t i)
+void JSON_array_remove(JSON *json, const size_t index)
 {
     struct json_array *array;
-    if (!(array = to_array(json)) || i >= array->length)
+
+    if ((array = to_array(json)) == NULL || index >= array->length)
         return;
 
-    json_free(&json_array_buffer(array)[i]);
+    json_free(&array->data[index]);
 
     // Shift elements to the left
-    memcpy(&json_array_buffer(array)[i], &json_array_buffer(array)[i + 1],
-        (array->length - i - 1) * sizeof(JSON));
+    memcpy(&array->data[index], &array->data[index + 1],
+        (array->length - index - 1) * sizeof(*array->data));
 
     array->length--;
 }

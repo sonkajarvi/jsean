@@ -270,7 +270,7 @@ static int parse_array(struct reader *rd, JSON *out)
     if (read(rd) != '[')
         return JSON_PARSE_EXPECTED_ARRAY_BEGIN;
 
-    if ((retval = json_init_array(out, 0)) != 0)
+    if ((retval = JSON_set_array(out, 0)) != 0)
         return retval;
 
     while (1) {
@@ -283,7 +283,7 @@ static int parse_array(struct reader *rd, JSON *out)
         if ((retval = parse_value(rd, &value)) != JSON_PARSE_OK)
             goto fail;
 
-        if ((retval = json_array_push(out, &value)) != 0)
+        if ((retval = JSON_array_push(out, &value)) != 0)
             goto fail;
 
         skip_whitespace(rd);

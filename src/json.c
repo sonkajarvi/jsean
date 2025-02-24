@@ -14,14 +14,14 @@
 static void array_free(JSON *json)
 {
     struct json_array *array;
-    if (!(array = json->data._array))
+
+    if ((array = json->data._array) == NULL)
         return;
 
-    const size_t length = json_array_length(json);
-    for (size_t i = 0; i < length; i++) {
-        json_free(json_array_at(json, i));
-    }
+    for (size_t i = 0; i < array->length; i++)
+        json_free(JSON_array_at(json, i));
 
+    free(array->data);
     free(array);
 }
 
@@ -42,7 +42,7 @@ static void object_free(JSON *json)
     free(object);
 }
 
-void json_move(void *lhs, void *rhs)
+void JSON_move(void *lhs, const void *rhs)
 {
     if (!lhs || !rhs)
         return;
@@ -50,8 +50,11 @@ void json_move(void *lhs, void *rhs)
     memcpy(lhs, rhs, sizeof(JSON));
 }
 
-enum json_type json_type(JSON *json)
+enum JSON_type JSON_type(const JSON *json)
 {
+    if (json == NULL || json->type >= JSON_TYPE_UNKNOWN)
+        return JSON_TYPE_UNKNOWN;
+
     return json->type;
 }
 
@@ -82,10 +85,7 @@ int json_init_null(JSON *json)
     if (!json)
         return EFAULT;
 
-    if (json->type != JSON_TYPE_NULL) {
-        json_free(json);
-        json->type = JSON_TYPE_NULL;
-    }
+    json->type = JSON_TYPE_NULL;
 
     return 0;
 }
@@ -95,12 +95,9 @@ int json_init_boolean(JSON *json, bool b)
     if (!json)
         return EFAULT;
 
-    if (json->type != JSON_TYPE_BOOLEAN) {
-        json_free(json);
-        json->type = JSON_TYPE_BOOLEAN;
-    }
-
     json->data._boolean = b;
+    json->type = JSON_TYPE_BOOLEAN;
+
     return 0;
 }
 
@@ -123,12 +120,9 @@ int json_set_number(JSON *json, double d)
     if (!json)
         return EFAULT;
 
-    if (json->type != JSON_TYPE_NUMBER) {
-        json_free(json);
-        json->type = JSON_TYPE_NUMBER;
-    }
-
     json->data._double = d;
+    json->type = JSON_TYPE_NUMBER;
+
     return 0;
 }
 
@@ -163,6 +157,7 @@ int json_set_string(JSON *json, const char *s)
     json_free(json);
     json->type = JSON_TYPE_STRING;
     json->data._string = strdup(s);
+
     return 0;
 }
 

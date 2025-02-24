@@ -24,15 +24,15 @@
 #endif
 
 // JSON types
-enum json_type
+enum JSON_type
 {
-    JSON_TYPE_UNKNOWN,
     JSON_TYPE_NULL,
     JSON_TYPE_BOOLEAN,
     JSON_TYPE_OBJECT,
     JSON_TYPE_ARRAY,
     JSON_TYPE_NUMBER,
     JSON_TYPE_STRING,
+    JSON_TYPE_UNKNOWN,
 };
 
 // JSON value
@@ -51,6 +51,7 @@ typedef struct
 
 struct json_array
 {
+    JSON *data;
     size_t capacity;
     size_t length;
 };
@@ -68,12 +69,7 @@ struct JSON_object
 };
 
 // Move JSON value from @rhs to @lhs
-void json_move(void *lhs, void *rhs);
-
-static inline JSON *json_array_buffer(struct json_array *array)
-{
-    return (void *)array + sizeof(*array);
-}
+void JSON_move(void *lhs, const void *rhs);
 
 static inline struct JSON_object_entry *JSON_object_buffer(struct JSON_object *object)
 {
@@ -88,7 +84,7 @@ int json_parse(JSON *json, const char *bytes);
 struct string json_stringify(JSON *json, const char *indent);
 
 // Get type of JSON value
-enum json_type json_type(JSON *json);
+enum JSON_type JSON_type(const JSON *json);
 
 // Free any JSON value
 void json_free(JSON *json);
@@ -109,20 +105,21 @@ JSON *JSON_object_get(JSON *json, const char *key);
 int JSON_object_insert(JSON *json, const char *key, JSON *value);
 int JSON_object_overwrite(JSON *json, const char *key, JSON *value);
 void JSON_object_remove(JSON *json, const char *key);
+
 // Internal: Does not copy key
 int json_internal_object_insert(JSON *json, char *key, JSON *other);
 
 // JSON array
-int json_init_array(JSON *json, const size_t n);
-size_t json_array_length(JSON *json);
-size_t json_array_capacity(JSON *json);
-int json_array_reserve(JSON *json, const size_t n);
-void json_array_clear(JSON *json);
-JSON *json_array_at(JSON *json, size_t i);
-int json_array_push(JSON *json, JSON *value);
-void json_array_pop(JSON *json);
-int json_array_insert(JSON *json, size_t i, JSON *value);
-void json_array_remove(JSON *json, size_t i);
+int JSON_set_array(JSON *json, size_t capacity);
+size_t JSON_array_size(const JSON *json);
+size_t JSON_array_capacity(const JSON *json);
+int JSON_array_reserve(JSON *json, const size_t capacity);
+void JSON_array_clear(JSON *json);
+JSON *JSON_array_at(const JSON *json, const size_t index);
+int JSON_array_push(JSON *json, const JSON *value);
+void JSON_array_pop(JSON *json);
+int JSON_array_insert(JSON *json, const size_t index, const JSON *value);
+void JSON_array_remove(JSON *json, const size_t index);
 
 // JSON number
 int json_set_number(JSON *json, double d);

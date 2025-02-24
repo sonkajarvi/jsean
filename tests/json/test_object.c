@@ -12,14 +12,14 @@ test_case(json_init_object)
 
     // Initialize JSON object with default capacity
     test_assert(json_init_object(&json, 0) == 0);
-    test_assert(json_type(&json) == JSON_TYPE_OBJECT);
+    test_assert(JSON_type(&json) == JSON_TYPE_OBJECT);
     test_assert(JSON_object_capacity(&json) == JSON_OBJECT_DEFAULT_CAPACITY);
     test_assert(JSON_object_count(&json) == 0);
     json_free(&json);
 
     // Initialize JSON object with own capacity
     test_assert(json_init_object(&json, 1) == 0);
-    test_assert(json_type(&json) == JSON_TYPE_OBJECT);
+    test_assert(JSON_type(&json) == JSON_TYPE_OBJECT);
     test_assert(JSON_object_capacity(&json) == 1);
     test_assert(JSON_object_count(&json) == 0);
     json_free(&json);

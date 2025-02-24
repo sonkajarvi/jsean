@@ -5,23 +5,23 @@
 int main(void)
 {
     // JSON
-    test_declare(json_move);
-    test_declare(json_type);
+    test_declare(JSON_move);
+    test_declare(JSON_type);
     test_declare(json_set_null);
     test_declare(json_set_and_get_boolean);
     test_declare(json_set_and_get_double);
     test_declare(json_set_and_get_string);
 
-    test_declare(json_init_array);
-    test_declare(json_array_length);
-    test_declare(json_array_capacity);
-    test_declare(json_array_reserve);
-    test_declare(json_array_clear);
-    test_declare(json_array_at);
-    test_declare(json_array_push);
-    test_declare(json_array_pop);
-    test_declare(json_array_insert);
-    test_declare(json_array_remove);
+    test_declare(JSON_set_array);
+    test_declare(JSON_array_size);
+    test_declare(JSON_array_capacity);
+    test_declare(JSON_array_reserve);
+    test_declare(JSON_array_clear);
+    test_declare(JSON_array_at);
+    test_declare(JSON_array_push);
+    test_declare(JSON_array_pop);
+    test_declare(JSON_array_insert);
+    test_declare(JSON_array_remove);
 
     test_declare(json_init_object);
     test_declare(JSON_object_count);

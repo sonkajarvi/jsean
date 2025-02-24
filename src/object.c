@@ -107,7 +107,7 @@ static bool object_rehash(struct JSON_object *object, const size_t new_cap)
         } while (!is_empty(object, j));
 
         buffer[j].key = buffer[i].key;
-        json_move(&buffer[j].value, &buffer[i].value);
+        JSON_move(&buffer[j].value, &buffer[i].value);
         buffer[i].key = NULL;
     }
 
@@ -215,7 +215,7 @@ int json_internal_object_insert(JSON *json, char *key, JSON *value)
     if (!json || !key || !value)
         return EFAULT;
 
-    if (!(object = to_object(json)) || json_type(value) == JSON_TYPE_UNKNOWN)
+    if (!(object = to_object(json)) || JSON_type(value) == JSON_TYPE_UNKNOWN)
         return EINVAL;
 
     // Allocate more memory and rehash
@@ -238,7 +238,7 @@ int json_internal_object_insert(JSON *json, char *key, JSON *value)
     }
 
     buffer[i].key = key;
-    json_move(&buffer[i].value, value);
+    JSON_move(&buffer[i].value, value);
     object->count++;
 
     return 0;
@@ -252,13 +252,13 @@ int JSON_object_overwrite(JSON *json, const char *key, JSON *value)
     if (!json || !key || !value)
         return EFAULT;
 
-    if (!(object = to_object(json)) || json_type(value) == JSON_TYPE_UNKNOWN)
+    if (!(object = to_object(json)) || JSON_type(value) == JSON_TYPE_UNKNOWN)
         return EINVAL;
 
     if ((tmp  = JSON_object_get(json, key)) == NULL)
         return JSON_object_insert(json, key, value);
 
-    json_move(tmp, value);
+    JSON_move(tmp, value);
     return 0;
 }
 

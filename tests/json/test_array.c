@@ -3,252 +3,249 @@
 #include <jsean/JSON.h>
 #include <test.h>
 
-test_case(json_init_array)
+test_case(JSON_set_array)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    // Try initializing JSON array with invalid arguments
-    test_assert(json_init_array(NULL, 0) == EFAULT);
+    // Invalid parameters
+    test_assert(JSON_set_array(NULL, 0) == EINVAL);
 
-    // Initialize JSON array with default capacity
-    test_assert(json_init_array(&json, 0) == 0);
-    test_assert(json_type(&json) == JSON_TYPE_ARRAY);
-    test_assert(json_array_capacity(&json) == JSON_ARRAY_DEFAULT_CAPACITY);
-    test_assert(json_array_length(&json) == 0);
-    json_free(&json);
+    // Default capacity
+    test_assert(JSON_set_array(&a, 0) == 0);
+    test_assert(JSON_type(&a) == JSON_TYPE_ARRAY);
+    test_assert(JSON_array_capacity(&a) == JSON_ARRAY_DEFAULT_CAPACITY);
+    test_assert(JSON_array_size(&a) == 0);
+    json_free(&a);
 
-    // Initialize JSON array with own capacity
-    test_assert(json_init_array(&json, 1) == 0);
-    test_assert(json_type(&json) == JSON_TYPE_ARRAY);
-    test_assert(json_array_capacity(&json) == 1);
-    test_assert(json_array_length(&json) == 0);
-    json_free(&json);
+    // Custom capacity
+    test_assert(JSON_set_array(&a, 10) == 0);
+    test_assert(JSON_type(&a) == JSON_TYPE_ARRAY);
+    test_assert(JSON_array_capacity(&a) == 10);
+    test_assert(JSON_array_size(&a) == 0);
+    json_free(&a);
 
     test_success();
 }
 
-test_case(json_array_length)
+test_case(JSON_array_size)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    // Try getting length of NULL
-    test_assert(json_array_length(NULL) == 0);
+    // Invalid parameters
+    test_assert(JSON_array_size(NULL) == 0);
 
-    // Try getting length of empty JSON array
-    json_init_array(&json, 0);
-    test_assert(json_array_length(&json) == 0);
-    json_array_clear(&json);
+    json_set_number(&a, 2.0);
+    test_assert(JSON_array_size(&a) == 0);
 
-    // Get length of populated JSON array
-    json_set_number(&tmp, -1);
-    for (int i = 0; i < 1000; i++) {
-        json_array_push(&json, &tmp);
-    }
-    test_assert(json_array_length(&json) == 1000);
-    json_free(&json);
+    // Empty array
+    JSON_set_array(&a, 0);
+    test_assert(JSON_array_size(&a) == 0);
+    JSON_array_clear(&a);
 
-    // Try getting length of non-array JSON value
-    json_set_number(&json, -1);
-    test_assert(json_array_length(&json) == 0);
+    // Populated array
+    json_set_number(&b, 2.0);
+    for (int i = 0; i < 100; i++)
+        JSON_array_push(&a, &b);
+
+    test_assert(JSON_array_size(&a) == 100);
+    json_free(&a);
 
     test_success();
 }
 
-test_case(json_array_capacity)
+test_case(JSON_array_capacity)
 {
-    JSON json = {0};
+    JSON a;
 
-    // Try getting capacity of NULL
-    test_assert(json_array_capacity(NULL) == 0);
+    // Invalid parameters
+    test_assert(JSON_array_capacity(NULL) == 0);
 
-    // Get capacity of initialized JSON array
-    json_init_array(&json, 0);
-    test_assert(json_array_capacity(&json) > 0);
-    json_free(&json);
+    json_set_number(&a, 2.0);
+    test_assert(JSON_array_capacity(&a) == 0);
 
-    // Try getting capacity of non-array JSON value
-    json_set_number(&json, -1);
-    test_assert(json_array_capacity(&json) == 0);
+    // Valid array
+    JSON_set_array(&a, 10);
+    test_assert(JSON_array_capacity(&a) == 10);
+    json_free(&a);
 
     test_success();
 }
 
-test_case(json_array_reserve)
+test_case(JSON_array_reserve)
 {
-    JSON json = {0};
+    JSON a;
 
-    // Try reserving memory for NULL
-    test_assert(json_array_reserve(NULL, 0) == EFAULT);
+    // Invalid parameters
+    test_assert(JSON_array_reserve(NULL, 0) == EINVAL);
 
-    // Try reserving less than current capacity
-    json_init_array(&json, 0);
-    test_assert(json_array_reserve(&json, 0) == EINVAL);
+    // Less than current capacity
+    JSON_set_array(&a, 10);
+    test_assert(JSON_array_reserve(&a, 0) == EINVAL);
+    test_assert(JSON_array_capacity(&a) == 10);
 
-    // Reserve memory for JSON array
-    test_assert(json_array_reserve(&json, 100) == 0);
-    test_assert(json_array_capacity(&json) >= 100);
-    json_free(&json);
+    // More than current capacity
+    test_assert(JSON_array_reserve(&a, 100) == 0);
+    test_assert(JSON_array_capacity(&a) == 100);
+    json_free(&a);
 
     test_success();
 }
 
-test_case(json_array_clear)
+test_case(JSON_array_clear)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    json_init_array(&json, 0);
-    json_array_reserve(&json, 1000);
-    json_array_clear(&json);
-    test_assert(json_array_capacity(&json) >= 1000);
+    JSON_set_array(&a, 0);
+    JSON_array_reserve(&a, 1000);
 
-    // Clear populated JSON array
-    json_set_number(&tmp, -1);
+    // Empty array
+    JSON_array_clear(&a);
+    test_assert(JSON_array_capacity(&a) == 1000);
+
+    // Populated array
+    json_set_number(&b, 2.0);
     for (int i = 0; i < 1000; i++)
-        json_array_push(&json, &tmp);
-    json_array_clear(&json);
-    test_assert(json_array_capacity(&json) >= 1000);
-    test_assert(json_array_length(&json) == 0);
-    json_free(&json);
+        JSON_array_push(&a, &b);
+
+    JSON_array_clear(&a);
+    test_assert(JSON_array_capacity(&a) == 1000);
+    test_assert(JSON_array_size(&a) == 0);
+    json_free(&a);
 
     test_success();
 }
 
-test_case(json_array_at)
+test_case(JSON_array_at)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    // Try getting element from NULL
-    test_assert(json_array_at(NULL, 0) == NULL);
+    // Invalid parameters
+    test_assert(JSON_array_at(NULL, 0) == NULL);
 
-    // Try getting element from empty JSON array
-    json_init_array(&json, 0);
-    test_assert(json_array_at(&json, 0) == NULL);
+    // Empty array
+    JSON_set_array(&a, 0);
+    test_assert(JSON_array_at(&a, 0) == NULL);
 
-    // Get element from populated JSON array
-    json_set_number(&tmp, -1);
-    json_array_push(&json, &tmp);
-    test_assert(json_array_at(&json, 0) != NULL);
-    json_free(&json);
+    // Populated array
+    json_set_number(&b, 2.0);
+    JSON_array_push(&a, &b);
+    test_assert(JSON_array_at(&a, 0) != NULL);
+    json_free(&a);
 
     test_success();
 }
 
-test_case(json_array_push)
+#include <stdio.h>
+
+test_case(JSON_array_push)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    // Try pushing with invalid arguments
-    test_assert(json_array_push(&json, NULL) == EFAULT);
-    test_assert(json_array_push(NULL, &tmp) == EFAULT);
+    // Invalid parameters
+    json_set_number(&a, 2.0);
+    json_set_number(&b, 2.0);
+    test_assert(JSON_array_push(&a, &b) == EINVAL);
 
-    // Try pushing unknown JSON value
-    json_init_array(&json, 1);
-    test_assert(json_array_push(&json, &tmp) == EINVAL);
+    test_assert(JSON_array_push(&a, NULL) == EINVAL);
+    test_assert(JSON_array_push(NULL, &b) == EINVAL);
 
-    // Push with valid arguments
-    json_set_number(&tmp, -1);
-    for (int i = 0; i < 1000; i++)
-        json_array_push(&json, &tmp);
-    test_assert(json_array_length(&json) == 1000);
-    json_free(&json);
-
-    // Try pushing with non-array JSON value
-    json_set_number(&json, -1);
-    test_assert(json_array_push(&json, &tmp) == EINVAL);
+    // Valid value
+    JSON_set_array(&a, 0);
+    test_assert(JSON_array_push(&a, &b) == 0);
+    test_assert(JSON_array_size(&a) == 1);
+    test_assert(json_number(JSON_array_at(&a, 0)) == 2.0);
+    json_free(&a);
 
     test_success();
 }
 
-test_case(json_array_pop)
+test_case(JSON_array_pop)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    json_init_array(&json, 0);
-    json_set_number(&tmp, -1);
+    JSON_set_array(&a, 0);
 
-    for (int i = 0; i < 1000; i++)
-        json_array_push(&json, &tmp);
-    test_assert(json_array_length(&json) == 1000);
+    // Empty array
+    test_assert(JSON_array_size(&a) == 0);
+    JSON_array_pop(&a);
+    test_assert(JSON_array_size(&a) == 0);
 
-    for (int i = 999; i >= 0; i--) {
-        json_array_pop(&json);
-        test_assert(json_array_length(&json) == i);
-    }
-    json_free(&json);
+    // Populated array
+    json_set_number(&b, 2.0);
+    JSON_array_push(&a, &b);
+
+    test_assert(JSON_array_size(&a) == 1);
+    JSON_array_pop(&a);
+    test_assert(JSON_array_size(&a) == 0);
+    json_free(&a);
 
     test_success();
 }
 
-test_case(json_array_insert)
+test_case(JSON_array_insert)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    // Try inserting unknown JSON value
-    json_init_array(&json, 0);
-    test_assert(json_array_insert(&json, 0, &tmp) == EINVAL);
+    // Not array
+    json_set_number(&a, 2.0);
+    test_assert(JSON_array_insert(&a, 0, &b) == EINVAL);
 
-    // Try inserting with invalid arguments
-    test_assert(json_array_insert(&json, 0, NULL) == EFAULT);
-    json_set_number(&tmp, -1);
-    test_assert(json_array_insert(NULL, 0, &tmp) == EFAULT);
+    // Invalid parameters
+    test_assert(JSON_array_insert(&a, 0, NULL) == EINVAL);
+    json_set_number(&b, 8.0);
+    test_assert(JSON_array_insert(NULL, 0, &b) == EINVAL);
 
-    // Try inserting out of bounds
-    test_assert(json_array_insert(&json, 1, &tmp) == EINVAL);
-
-    json_set_number(&tmp, 1);
-    json_array_push(&json, &tmp);
-    json_set_number(&tmp, 3);
-    json_array_push(&json, &tmp);
-
-    // Insert at the beginning
-    json_set_number(&tmp, 0);
-    test_assert(json_array_insert(&json, 0, &tmp) == 0);
-
-    // Insert at the middle
-    json_set_number(&tmp, 2);
-    test_assert(json_array_insert(&json, 2, &tmp) == 0);
+    // Out of bounds
+    JSON_set_array(&a, 0);
+    test_assert(JSON_array_insert(&a, 100, &b) == EINVAL);
 
     // Insert at the end
-    json_set_number(&tmp, 4);
-    test_assert(json_array_insert(&json, 4, &tmp) == 0);
+    test_assert(JSON_array_insert(&a, 0, &b) == 0);
 
-    test_assert(json_array_length(&json) == 5);
-    for (int i = 0; i < 5; i++)
-        test_assert(json_number(json_array_at(&json, i)) == i);
-    json_free(&json);
+    // Insert at the beginning
+    json_set_number(&b, 2.0);
+    test_assert(JSON_array_insert(&a, 0, &b) == 0);
 
-    // Try inserting with non-array JSON value
-    json_set_number(&json, -1);
-    test_assert(json_array_insert(&json, 0, &tmp) == EINVAL);
+    // Insert in the middle
+    json_set_number(&b, 4.0);
+    test_assert(JSON_array_insert(&a, 1, &b) == 0);
+
+    test_assert(json_number(JSON_array_at(&a, 0)) == 2.0);
+    test_assert(json_number(JSON_array_at(&a, 1)) == 4.0);
+    test_assert(json_number(JSON_array_at(&a, 2)) == 8.0);
+    json_free(&a);
 
     test_success();
 }
 
-test_case(json_array_remove)
+test_case(JSON_array_remove)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    json_init_array(&json, 0);
-    json_set_number(&tmp, -1);
-    for (int i = 0; i < 3; i++)
-        json_array_push(&json, &tmp);
+    JSON_set_array(&a, 0);
+    json_set_number(&b, 2.0);
 
-    // Try removing out of bounds
-    json_array_remove(&json, 3);
-    test_assert(json_array_length(&json) == 3);
+    JSON_array_push(&a, &b);
+    JSON_array_push(&a, &b);
+    JSON_array_push(&a, &b);
+    test_assert(JSON_array_size(&a) == 3);
 
-    // Remove at the middle
-    json_array_remove(&json, 1);
-    test_assert(json_array_length(&json) == 2);
+    // Out of bounds
+    JSON_array_remove(&a, 10);
+    test_assert(JSON_array_size(&a) == 3);
 
-    // Remove at the beginning
-    json_array_remove(&json, 0);
-    test_assert(json_array_length(&json) == 1);
+    // Remove from the middle
+    JSON_array_remove(&a, 1);
+    test_assert(JSON_array_size(&a) == 2);
 
-    // Remove at the end
-    json_array_remove(&json, 0);
-    test_assert(json_array_length(&json) == 0);
-    json_free(&json);
+    // Remove from the beginning
+    JSON_array_remove(&a, 0);
+    test_assert(JSON_array_size(&a) == 1);
+
+    // Remove from the end
+    JSON_array_remove(&a, 0);
+    test_assert(JSON_array_size(&a) == 0);
+    json_free(&a);
 
     test_success();
 }
