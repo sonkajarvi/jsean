@@ -16,7 +16,7 @@ test_case(JSON_type)
     JSON_set_boolean(&a, true);
     test_assert(JSON_type(&a) == JSON_TYPE_BOOLEAN);
 
-    json_init_object(&a, 0);
+    JSON_set_object(&a);
     test_assert(JSON_type(&a) == JSON_TYPE_OBJECT);
     JSON_free(&a);
 
@@ -67,7 +67,7 @@ test_case(JSON_free)
     JSON_free(&a);
     test_assert(JSON_type(&a) == JSON_TYPE_NULL);
 
-    json_init_object(&a, 0);
+    JSON_set_object(&a);
     JSON_free(&a);
     test_assert(JSON_type(&a) == JSON_TYPE_NULL);
 

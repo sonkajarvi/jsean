@@ -11,35 +11,36 @@
 
 #include <jsean/JSON.h>
 
-static void array_free(JSON *json)
+static void JSON_array_free(JSON *json)
 {
-    struct json_array *array;
+    struct JSON_array *arr;
 
-    if ((array = json->data._array) == NULL)
+    if ((arr = json->data._array) == NULL)
         return;
 
-    for (size_t i = 0; i < array->length; i++)
+    for (size_t i = 0; i < arr->size; i++)
         JSON_free(JSON_array_at(json, i));
 
-    free(array->data);
-    free(array);
+    free(arr->data);
+    free(arr);
 }
 
-static void object_free(JSON *json)
+static void JSON_object_free(JSON *json)
 {
-    struct JSON_object *object;
-    if (!(object = json->data._object))
+    struct JSON_object *obj;
+
+    if (!(obj = json->data._object))
         return;
 
-    struct JSON_object_entry *buffer = JSON_object_buffer(object);
-    for (size_t i = 0; i < object->capacity; i++) {
-        if (buffer[i].key) {
-            JSON_free(&buffer[i].value);
-            free(buffer[i].key);
+    for (size_t i = 0; i < obj->cap; i++) {
+        if (obj->data[i].key) {
+            JSON_free(&obj->data[i].value);
+            free(obj->data[i].key);
         }
     }
 
-    free(object);
+    free(obj->data);
+    free(obj);
 }
 
 enum JSON_type JSON_type(const JSON *json)
@@ -66,9 +67,9 @@ void JSON_free(JSON *json)
     if (json->type == JSON_TYPE_STRING)
         free(JSON_string(json));
     else if (json->type == JSON_TYPE_ARRAY)
-        array_free(json);
+        JSON_array_free(json);
     else if (json->type == JSON_TYPE_OBJECT)
-        object_free(json);
+        JSON_object_free(json);
 
     JSON_set_null(json);
 }

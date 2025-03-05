@@ -46,18 +46,18 @@ static void write_array(struct string *str, JSON *json, int indent, const char *
 
 static void write_object(struct string *str, JSON *json, int indent, const char *indent_s)
 {
-    struct JSON_object *object = json->data._object;
+    struct JSON_object *obj = json->data._object;
 
     string_append_char(str, '{');
     if (indent_s)
         string_append_char(str, '\n');
 
-    struct JSON_object_entry *buffer = JSON_object_buffer(object);
-    for (size_t i = 0, j = object->count; j; i++) {
-        if (!buffer[i].key)
+    // struct JSON_object_entry *buffer = JSON_object_buffer(object);
+    for (size_t i = 0, j = obj->count; j; i++) {
+        if (!obj->data[i].key)
             continue;
 
-        if (j != object->count) {
+        if (j != obj->count) {
             string_append_char(str, ',');
             if (indent_s)
                 string_append_char(str, '\n');
@@ -66,11 +66,11 @@ static void write_object(struct string *str, JSON *json, int indent, const char 
         if (indent_s)
             write_indent(str, indent + 1, indent_s);
         string_append_char(str, '"');
-        string_append_chars(str, buffer[i].key);
+        string_append_chars(str, obj->data[i].key);
         string_append_chars(str, "\":");
         if (indent_s)
             string_append_char(str, ' ');
-        write_value(str, &buffer[i].value, indent + 1, indent_s);
+        write_value(str, &obj->data[i].value, indent + 1, indent_s);
 
         j--;
     }

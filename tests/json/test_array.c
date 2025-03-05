@@ -102,20 +102,25 @@ test_case(JSON_array_clear)
     JSON a, b;
 
     JSON_set_array(&a, 0);
-    JSON_array_reserve(&a, 1000);
+    JSON_array_reserve(&a, 100);
+    test_assert(JSON_array_size(&a) == 0);
 
     // Empty array
     JSON_array_clear(&a);
-    test_assert(JSON_array_capacity(&a) == 1000);
+    test_assert(JSON_array_size(&a) == 0);
+    test_assert(JSON_array_capacity(&a) == 100);
 
     // Populated array
     JSON_set_number(&b, 2.0);
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 100; i++)
         JSON_array_push(&a, &b);
 
+    test_assert(JSON_array_size(&a) == 100);
+    test_assert(JSON_array_capacity(&a) == 100);
     JSON_array_clear(&a);
-    test_assert(JSON_array_capacity(&a) == 1000);
+
     test_assert(JSON_array_size(&a) == 0);
+    test_assert(JSON_array_capacity(&a) == 100);
     JSON_free(&a);
 
     test_success();
@@ -135,13 +140,11 @@ test_case(JSON_array_at)
     // Populated array
     JSON_set_number(&b, 2.0);
     JSON_array_push(&a, &b);
-    test_assert(JSON_array_at(&a, 0) != NULL);
+    test_assert(JSON_number(JSON_array_at(&a, 0)) == 2.0);
     JSON_free(&a);
 
     test_success();
 }
-
-#include <stdio.h>
 
 test_case(JSON_array_push)
 {
@@ -152,11 +155,11 @@ test_case(JSON_array_push)
     JSON_set_number(&b, 2.0);
     test_assert(JSON_array_push(&a, &b) == EINVAL);
 
-    test_assert(JSON_array_push(&a, NULL) == EINVAL);
     test_assert(JSON_array_push(NULL, &b) == EINVAL);
+    JSON_set_array(&a, 0);
+    test_assert(JSON_array_push(&a, NULL) == EINVAL);
 
     // Valid value
-    JSON_set_array(&a, 0);
     test_assert(JSON_array_push(&a, &b) == 0);
     test_assert(JSON_array_size(&a) == 1);
     test_assert(JSON_number(JSON_array_at(&a, 0)) == 2.0);

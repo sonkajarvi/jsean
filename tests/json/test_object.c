@@ -3,218 +3,190 @@
 #include <jsean/JSON.h>
 #include <test.h>
 
-test_case(json_init_object)
+test_case(JSON_set_object)
 {
-    JSON json = {0};
+    JSON a;
 
-    // Try initializing JSON object with invalid arguments
-    test_assert(json_init_object(NULL, 0) == EFAULT);
+    // Invalid parameters
+    test_assert(JSON_set_object(NULL) == EINVAL);
 
-    // Initialize JSON object with default capacity
-    test_assert(json_init_object(&json, 0) == 0);
-    test_assert(JSON_type(&json) == JSON_TYPE_OBJECT);
-    test_assert(JSON_object_capacity(&json) == JSON_OBJECT_DEFAULT_CAPACITY);
-    test_assert(JSON_object_count(&json) == 0);
-    JSON_free(&json);
-
-    // Initialize JSON object with own capacity
-    test_assert(json_init_object(&json, 1) == 0);
-    test_assert(JSON_type(&json) == JSON_TYPE_OBJECT);
-    test_assert(JSON_object_capacity(&json) == 1);
-    test_assert(JSON_object_count(&json) == 0);
-    JSON_free(&json);
+    // Valid
+    test_assert(JSON_set_object(&a) == 0);
+    test_assert(JSON_type(&a) == JSON_TYPE_OBJECT);
+    test_assert(JSON_object_capacity(&a) == JSON_OBJECT_DEFAULT_CAPACITY);
+    test_assert(JSON_object_count(&a) == 0);
+    JSON_free(&a);
 
     test_success();
 }
 
 test_case(JSON_object_count)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    // Try getting count of NULL
+    // Invalid parameters
     test_assert(JSON_object_count(NULL) == 0);
 
-    // Get count of empty JSON object
-    json_init_object(&json, 0);
-    test_assert(JSON_object_count(&json) == 0);
+    JSON_set_number(&a, 2.0);
+    test_assert(JSON_object_count(&a) == 0);
 
-    // Get count of populated JSON object
-    JSON_set_number(&tmp, -1);
-    for (int i = 'a'; i <= 'z'; i++) {
-        char key[2] = { i, '\0' };
-        JSON_object_insert(&json, key, &tmp);
-    }
-    test_assert(JSON_object_count(&json) == 26);
-    JSON_free(&json);
+    // Empty object
+    JSON_set_object(&a);
+    test_assert(JSON_object_count(&a) == 0);
 
-    // Try getting count of non-object JSON value
-    JSON_set_number(&json, -1);
-    test_assert(JSON_object_count(&json) == 0);
+    // Populated object
+    JSON_set_number(&b, 2.0);
+    JSON_object_insert(&a, "a", &b);
+    test_assert(JSON_object_count(&a) == 1);
+    JSON_free(&a);
 
     test_success();
 }
 
-#include <stdio.h>
-
 test_case(JSON_object_capacity)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    // Try getting capacity of NULL
+    // Invalid parameters
     test_assert(JSON_object_capacity(NULL) == 0);
 
-    // Get capacity of initialized JSON object
-    json_init_object(&json, 0);
-    const size_t capacity = JSON_object_capacity(&json);
-    test_assert(capacity > 0);
+    JSON_set_number(&a, 2.0);
+    test_assert(JSON_object_count(&a) == 0);
 
-    // Try getting capacity of populated JSON object
-    JSON_set_number(&json, -1);
-    test_assert(JSON_object_capacity(&json) == 0);
+    // Valid
+    JSON_set_object(&a);
+    test_assert(JSON_object_capacity(&a) == JSON_OBJECT_DEFAULT_CAPACITY);
+    JSON_free(&a);
 
     test_success();
 }
 
 test_case(JSON_object_clear)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    json_init_object(&json, 0);
-    JSON_object_clear(&json);
-    test_assert(JSON_object_capacity(&json) > 0);
+    JSON_set_object(&a);
+    test_assert(JSON_object_count(&a) == 0);
+    test_assert(JSON_object_capacity(&a) == JSON_OBJECT_DEFAULT_CAPACITY);
 
-    // Clear populated JSON object
-    JSON_set_number(&tmp, -1);
-    for (int i = 'a'; i <= 'z'; i++) {
-        char key[2] = { i, '\0' };
-        JSON_object_insert(&json, key, &tmp);
-    }
-    JSON_object_clear(&json);
-    test_assert(JSON_object_capacity(&json) > 0);
-    test_assert(JSON_object_count(&json) == 0);
-    JSON_free(&json);
+    // Empty object
+    JSON_object_clear(&a);
+    test_assert(JSON_object_count(&a) == 0);
+    test_assert(JSON_object_capacity(&a) == JSON_OBJECT_DEFAULT_CAPACITY);
+
+    // Populated object
+    JSON_set_number(&b, 2.0);
+    JSON_object_insert(&a, "a", &b);
+    JSON_object_insert(&a, "b", &b);
+    JSON_object_insert(&a, "c", &b);
+    test_assert(JSON_object_count(&a) == 3);
+    test_assert(JSON_object_capacity(&a) > 0);
+
+    JSON_object_clear(&a);
+    test_assert(JSON_object_count(&a) == 0);
+    test_assert(JSON_object_capacity(&a) > 0);
+    JSON_free(&a);
 
     test_success();
 }
 
 test_case(JSON_object_get)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    // Try getting value from NULL
-    test_assert(JSON_object_get(NULL, "key") == NULL);
+    // Invalid parameters
+    test_assert(JSON_object_get(NULL, "a") == NULL);
 
-    // Try getting value from empty JSON object
-    json_init_object(&json, 0);
-    test_assert(JSON_object_get(&json, "key") == NULL);
+    JSON_set_number(&a, 2.0);
+    test_assert(JSON_object_get(&a, "a") == NULL);
 
-    // Get value from populated JSON object
-    JSON_set_number(&tmp, -1);
-    for (int i = 'a'; i <= 'z'; i++) {
-        char key[2] = { i, '\0' };
-        JSON_object_insert(&json, key, &tmp);
-    }
-    for (int i = 'a'; i <= 'z'; i++) {
-        char key[2] = { i, '\0' };
-        test_assert(JSON_number(JSON_object_get(&json, key)) == -1);
-    }
-    JSON_free(&json);
+    JSON_set_object(&a);
+    test_assert(JSON_object_get(&a, NULL) == NULL);
 
-    // Try getting value from non-object JSON value
-    JSON_set_number(&json, -1);
-    test_assert(JSON_object_get(&json, "key") == NULL);
+    // Empty object
+    test_assert(JSON_object_get(&a, "a") == NULL);
+
+    // Populated object
+    JSON_set_number(&b, 2.0);
+    JSON_object_insert(&a, "a", &b);
+    test_assert(JSON_number(JSON_object_get(&a, "a")) == 2.0);
+    JSON_free(&a);
 
     test_success();
 }
 
 test_case(JSON_object_insert)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    // Try inserting into unknown JSON value
-    json_init_object(&json, 1);
-    test_assert(JSON_object_insert(&json, "key", &tmp) == EINVAL);
+    // Invalid parameters
+    JSON_set_number(&a, 2.0);
+    JSON_set_number(&b, 2.0);
+    test_assert(JSON_object_insert(&a, "a", &b) == EINVAL);
 
-    // Try inserting with invalid arguments
-    JSON_set_number(&tmp, -1);
-    test_assert(JSON_object_insert(NULL, "key", &tmp) == EFAULT);
-    test_assert(JSON_object_insert(&json, NULL, &tmp) == EFAULT);
-    test_assert(JSON_object_insert(&json, "key", NULL) == EFAULT);
+    test_assert(JSON_object_insert(NULL, "a", &b) == EINVAL);
+    JSON_set_object(&a);
+    test_assert(JSON_object_insert(&a, NULL, &b) == EINVAL);
+    test_assert(JSON_object_insert(&a, "a", NULL) == EINVAL);
 
-    // Insert with valid arguments
-    for (int i = 'a'; i <= 'z'; i++) {
-        char key[2] = { i, '\0' };
-        test_assert(JSON_object_insert(&json, key, &tmp) == 0);
-    }
-    test_assert(JSON_object_count(&json) == 26);
+    // Valid values
+    test_assert(JSON_object_insert(&a, "a", &b) == 0);
+    test_assert(JSON_object_count(&a) == 1);
+    test_assert(JSON_number(JSON_object_get(&a, "a")) == 2.0);
 
-    // Try inserting with duplicate key
-    test_assert(JSON_object_insert(&json, "key", &tmp) == 0);
-    test_assert(JSON_object_insert(&json, "key", &tmp) == EINVAL);
-    JSON_free(&json);
-
-    // Try inserting into non-object JSON value
-    JSON_set_number(&json, -1);
-    test_assert(JSON_object_insert(&json, "key", &tmp) == EINVAL);
+    // Duplicate key
+    test_assert(JSON_object_insert(&a, "a", &b) == EINVAL);
+    JSON_free(&a);
 
     test_success();
 }
 
 test_case(JSON_object_overwrite)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    // Try overwriting into unknown JSON value
-    json_init_object(&json, 0);
-    test_assert(JSON_object_overwrite(&json, "key", &tmp) == EINVAL);
+    // Invalid parameters
+    JSON_set_number(&a, 2.0);
+    JSON_set_number(&b, 2.0);
+    test_assert(JSON_object_overwrite(&a, "a", &b) == EINVAL);
 
-    // Try overwriting with invalid arguments
-    JSON_set_number(&tmp, -1);
-    test_assert(JSON_object_overwrite(NULL, "key", &tmp) == EFAULT);
-    test_assert(JSON_object_overwrite(&json, NULL, &tmp) == EFAULT);
-    test_assert(JSON_object_overwrite(&json, "key", NULL) == EFAULT);
+    test_assert(JSON_object_overwrite(NULL, "a", &b) == EINVAL);
+    JSON_set_object(&a);
+    test_assert(JSON_object_overwrite(&a, NULL, &b) == EINVAL);
+    test_assert(JSON_object_overwrite(&a, "a", NULL) == EINVAL);
 
-    // Overwrite with valid arguments
-    for (int i = 'a'; i <= 'z'; i++) {
-        char key[2] = { i, '\0' };
-        test_assert(JSON_object_overwrite(&json, key, &tmp) == 0);
-    }
-    test_assert(JSON_object_count(&json) == 26);
+    // Valid values
+    test_assert(JSON_object_overwrite(&a, "a", &b) == 0);
+    test_assert(JSON_object_count(&a) == 1);
+    test_assert(JSON_number(JSON_object_get(&a, "a")) == 2.0);
 
-    // Overwrite value
-    test_assert(JSON_object_overwrite(&json, "key", &tmp) == 0);
-    test_assert(JSON_number(JSON_object_get(&json, "key")) == -1);
-    JSON_set_number(&tmp, 1);
-    test_assert(JSON_object_overwrite(&json, "key", &tmp) == 0);
-    test_assert(JSON_number(JSON_object_get(&json, "key")) == 1);
-    JSON_free(&json);
-
-    // Try overwriting into non-object JSON value
-    JSON_set_number(&json, -1);
-    test_assert(JSON_object_overwrite(&json, "key", &tmp) == EINVAL);
+    // Duplicate key
+    JSON_set_number(&b, 4.0);
+    test_assert(JSON_object_overwrite(&a, "a", &b) == 0);
+    test_assert(JSON_object_count(&a) == 1);
+    test_assert(JSON_number(JSON_object_get(&a, "a")) == 4.0);
+    JSON_free(&a);
 
     test_success();
 }
 
 test_case(JSON_object_remove)
 {
-    JSON json = {0}, tmp = {0};
+    JSON a, b;
 
-    json_init_object(&json, 0);
-    JSON_set_number(&tmp, -1);
-    for (int i = 'a'; i <= 'z'; i++) {
-        char key[2] = { i, '\0' };
-        JSON_object_insert(&json, key, &tmp);
-    }
+    JSON_set_object(&a);
+    JSON_set_number(&b, 2.0);
+    JSON_object_insert(&a, "a", &b);
+    test_assert(JSON_object_count(&a) == 1);
 
-    // Try removing non-existent key
-    JSON_object_remove(&json, "key");
-    test_assert(JSON_object_count(&json) == 26);
+    // Invalid key
+    JSON_object_remove(&a, "b");
+    test_assert(JSON_object_count(&a) == 1);
 
-    // Remove existing key
-    JSON_object_remove(&json, "a");
-    test_assert(JSON_object_count(&json) == 25);
-    JSON_free(&json);
+    // Valid key
+    JSON_object_remove(&a, "a");
+    test_assert(JSON_object_count(&a) == 0);
+    JSON_free(&a);
 
     test_success();
 }

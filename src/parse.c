@@ -216,7 +216,7 @@ static int parse_object(struct reader *rd, JSON *out)
     if (read(rd) != '{')
         return JSON_PARSE_EXPECTED_BEGIN_OBJECT;
 
-    if ((retval = json_init_object(out, 0)) != 0)
+    if ((retval = JSON_set_object(out)) != 0)
         return retval;
 
     while (1) {

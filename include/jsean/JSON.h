@@ -44,16 +44,16 @@ typedef struct
         bool                _boolean;
         double              _double;
         char               *_string;
-        struct json_array  *_array;
+        struct JSON_array  *_array;
         struct JSON_object *_object;
     } data;
 } JSON;
 
-struct json_array
+struct JSON_array
 {
     JSON *data;
-    size_t capacity;
-    size_t length;
+    size_t cap;
+    size_t size;
 };
 
 struct JSON_object_entry
@@ -64,14 +64,10 @@ struct JSON_object_entry
 
 struct JSON_object
 {
-    size_t capacity;
+    struct JSON_object_entry *data;
+    size_t cap;
     size_t count;
 };
-
-static inline struct JSON_object_entry *JSON_object_buffer(struct JSON_object *object)
-{
-    return (void *)object + sizeof(*object);
-}
 
 // Get type of JSON value
 enum JSON_type JSON_type(const JSON *json);
@@ -94,13 +90,13 @@ int JSON_set_boolean(JSON *json, const bool b);
 bool JSON_boolean(const JSON *json);
 
 // JSON object
-int json_init_object(JSON *json, const size_t n);
-size_t JSON_object_count(JSON *json);
-size_t JSON_object_capacity(JSON *json);
+int JSON_set_object(JSON *json);
+size_t JSON_object_count(const JSON *json);
+size_t JSON_object_capacity(const JSON *json);
 void JSON_object_clear(JSON *json);
-JSON *JSON_object_get(JSON *json, const char *key);
-int JSON_object_insert(JSON *json, const char *key, JSON *value);
-int JSON_object_overwrite(JSON *json, const char *key, JSON *value);
+JSON *JSON_object_get(const JSON *json, const char *key);
+int JSON_object_insert(JSON *json, const char *key, JSON *val);
+int JSON_object_overwrite(JSON *json, const char *key, JSON *val);
 void JSON_object_remove(JSON *json, const char *key);
 
 // Internal: Does not copy key
