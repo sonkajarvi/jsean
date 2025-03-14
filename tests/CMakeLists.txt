@@ -4,8 +4,9 @@ add_executable(tests
     main.c
 
     json/test_array.c
-    json/test_json.c
+    json/test_value.c
     json/test_object.c
+
     string/test_string.c
 )
 

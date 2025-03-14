@@ -4,25 +4,24 @@
 // SPDX-License-Identifier: MIT
 //
 
-#include <assert.h>
 #include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <jsean/JSON.h>
+#include <jsean/jsean.h>
 
-static struct JSON_array *JSON_array(const JSON *json)
+static struct jsean_array *jsean_get_array(const jsean_t *json)
 {
-    if (!json || json->type != JSON_TYPE_ARRAY)
+    if (!json || json->type != JSEAN_TYPE_ARRAY)
         return NULL;
 
     return json->data._array;
 }
 
-int JSON_set_array(JSON *json, size_t cap)
+int jsean_set_array(jsean_t *json, size_t cap)
 {
-    struct JSON_array *arr;
+    struct jsean_array *arr;
 
     if (!json)
         return EINVAL;
@@ -30,7 +29,7 @@ int JSON_set_array(JSON *json, size_t cap)
     if ((arr = malloc(sizeof(*arr))) == NULL)
         return ENOMEM;
 
-    cap = cap ?: JSON_ARRAY_DEFAULT_CAPACITY;
+    cap = cap ?: JSEAN_ARRAY_DEFAULT_CAPACITY;
     if ((arr->data = malloc(sizeof(*arr->data) * cap)) == NULL)
         return ENOMEM;
 
@@ -38,40 +37,40 @@ int JSON_set_array(JSON *json, size_t cap)
     arr->size = 0;
 
     json->data._array = arr;
-    json->type = JSON_TYPE_ARRAY;
+    json->type = JSEAN_TYPE_ARRAY;
 
     return 0;
 }
 
-size_t JSON_array_size(const JSON *json)
+size_t jsean_array_size(const jsean_t *json)
 {
-    struct JSON_array *arr;
+    struct jsean_array *arr;
 
-    if ((arr = JSON_array(json)) == NULL)
+    if ((arr = jsean_get_array(json)) == NULL)
         return 0;
 
     return arr->size;
 }
 
-size_t JSON_array_capacity(const JSON *json)
+size_t jsean_array_capacity(const jsean_t *json)
 {
-    struct JSON_array *arr;
+    struct jsean_array *arr;
 
-    if ((arr = JSON_array(json)) == NULL)
+    if ((arr = jsean_get_array(json)) == NULL)
         return 0;
 
     return arr->cap;
 }
 
-int JSON_array_reserve(JSON *json, size_t cap)
+int jsean_array_reserve(jsean_t *json, size_t cap)
 {
-    struct JSON_array *arr;
-    JSON *tmp;
+    struct jsean_array *arr;
+    jsean_t *tmp;
 
-    if ((arr = JSON_array(json)) == NULL)
+    if ((arr = jsean_get_array(json)) == NULL)
         return EINVAL;
 
-    cap = cap ?: JSON_ARRAY_DEFAULT_CAPACITY;
+    cap = cap ?: JSEAN_ARRAY_DEFAULT_CAPACITY;
     if (cap <= arr->cap)
         return EINVAL;
 
@@ -84,103 +83,103 @@ int JSON_array_reserve(JSON *json, size_t cap)
     return 0;
 }
 
-void JSON_array_clear(JSON *json)
+void jsean_array_clear(jsean_t *json)
 {
-    struct JSON_array *arr;
+    struct jsean_array *arr;
 
-    if ((arr = JSON_array(json)) == NULL)
+    if ((arr = jsean_get_array(json)) == NULL)
         return;
 
     for (size_t i = 0; i < arr->size; i++)
-        JSON_free(JSON_array_at(json, i));
+        jsean_free(jsean_array_at(json, i));
 
     arr->size = 0;
 }
 
-JSON *JSON_array_at(const JSON *json, const size_t idx)
+jsean_t *jsean_array_at(const jsean_t *json, const size_t idx)
 {
-    struct JSON_array *arr;
+    struct jsean_array *arr;
 
-    if ((arr = JSON_array(json)) == NULL || idx >= arr->size)
+    if ((arr = jsean_get_array(json)) == NULL || idx >= arr->size)
         return NULL;
 
     return &arr->data[idx];
 }
 
-int JSON_array_push(JSON *json, const JSON *val)
+int jsean_array_push(jsean_t *json, const jsean_t *val)
 {
-    struct JSON_array *arr;
+    struct jsean_array *arr;
 
-    if ((arr = JSON_array(json)) == NULL)
+    if ((arr = jsean_get_array(json)) == NULL)
         return EINVAL;
 
-    if (JSON_type(val) == JSON_TYPE_UNKNOWN)
+    if (jsean_type(val) == JSEAN_TYPE_UNKNOWN)
         return EINVAL;
 
     // Allocate more memory when needed
     if (arr->size >= arr->cap) {
-        if (JSON_array_reserve(json, 2 * arr->cap) != 0)
+        if (jsean_array_reserve(json, 2 * arr->cap) != 0)
             return ENOMEM;
 
-        arr = JSON_array(json);
+        arr = jsean_get_array(json);
     }
 
-    JSON_move(&arr->data[arr->size], val);
+    jsean_move(&arr->data[arr->size], val);
     arr->size++;
 
     return 0;
 }
 
-void JSON_array_pop(JSON *json)
+void jsean_array_pop(jsean_t *json)
 {
-    struct JSON_array *arr;
+    struct jsean_array *arr;
 
-    if ((arr = JSON_array(json)) == NULL || arr->size == 0)
+    if ((arr = jsean_get_array(json)) == NULL || arr->size == 0)
         return;
 
-    JSON_free(&arr->data[arr->size - 1]);
+    jsean_free(&arr->data[arr->size - 1]);
     arr->size--;
 }
 
-int JSON_array_insert(JSON *json, const size_t idx, const JSON *val)
+int jsean_array_insert(jsean_t *json, const size_t idx, const jsean_t *val)
 {
-    struct JSON_array *arr;
+    struct jsean_array *arr;
 
-    if ((arr = JSON_array(json)) == NULL || idx > arr->size)
+    if ((arr = jsean_get_array(json)) == NULL || idx > arr->size)
         return EINVAL;
 
-    if (JSON_type(val) == JSON_TYPE_UNKNOWN)
+    if (jsean_type(val) == JSEAN_TYPE_UNKNOWN)
         return EINVAL;
 
     if (idx == arr->size)
-        return JSON_array_push(json, val);
+        return jsean_array_push(json, val);
 
     // Allocate more memory when needed
     if (arr->size >= arr->cap) {
-        if (JSON_array_reserve(json, 2 * arr->cap) != 0)
+        if (jsean_array_reserve(json, 2 * arr->cap) != 0)
             return ENOMEM;
 
-        arr = JSON_array(json);
+        arr = jsean_get_array(json);
     }
 
     // Shift elements to the right
     memcpy(&arr->data[idx + 1], &arr->data[idx],
         (arr->size - idx) * sizeof(*arr->data));
 
-    JSON_move(&arr->data[idx], val);
+    jsean_move(&arr->data[idx], val);
     arr->size++;
 
     return 0;
 }
 
-void JSON_array_remove(JSON *json, const size_t idx)
+void jsean_array_remove(jsean_t *json, const size_t idx)
 {
-    struct JSON_array *arr;
+    struct jsean_array *arr;
 
-    if ((arr = JSON_array(json)) == NULL || idx >= arr->size)
+    if ((arr = jsean_get_array(json)) == NULL || idx >= arr->size)
         return;
 
-    JSON_free(&arr->data[idx]);
+    jsean_free(&arr->data[idx]);
 
     // Shift elements to the left
     memcpy(&arr->data[idx], &arr->data[idx + 1],

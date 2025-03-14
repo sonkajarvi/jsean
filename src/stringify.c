@@ -6,10 +6,10 @@
 
 #include <stdio.h>
 
-#include <jsean/JSON.h>
+#include <jsean/jsean.h>
 #include <jsean/string.h>
 
-static void write_value(struct string *str, JSON *json, int indent, const char *indent_s);
+static void write_value(struct string *str, jsean_t *json, int indent, const char *indent_s);
 
 static void write_indent(struct string *str, int indent, const char *indent_s)
 {
@@ -17,13 +17,13 @@ static void write_indent(struct string *str, int indent, const char *indent_s)
         string_append_chars(str, indent_s);
 }
 
-static void write_array(struct string *str, JSON *json, int indent, const char *indent_s)
+static void write_array(struct string *str, jsean_t *json, int indent, const char *indent_s)
 {
     string_append_char(str, '[');
     if (indent_s)
         string_append_char(str, '\n');
 
-    const size_t len = JSON_array_size(json);
+    const size_t len = jsean_array_size(json);
     for (size_t i = 0; i < len; i++) {
         if (i > 0) {
             string_append_char(str, ',');
@@ -33,7 +33,7 @@ static void write_array(struct string *str, JSON *json, int indent, const char *
 
         if (indent_s)
             write_indent(str, indent + 1, indent_s);
-        write_value(str, JSON_array_at(json, i), indent + 1, indent_s);
+        write_value(str, jsean_array_at(json, i), indent + 1, indent_s);
     }
 
     if (indent_s) {
@@ -44,15 +44,15 @@ static void write_array(struct string *str, JSON *json, int indent, const char *
     string_append_char(str, ']');
 }
 
-static void write_object(struct string *str, JSON *json, int indent, const char *indent_s)
+static void write_object(struct string *str, jsean_t *json, int indent, const char *indent_s)
 {
-    struct JSON_object *obj = json->data._object;
+    struct jsean_object *obj = json->data._object;
 
     string_append_char(str, '{');
     if (indent_s)
         string_append_char(str, '\n');
 
-    // struct JSON_object_entry *buffer = JSON_object_buffer(object);
+    // struct jsean_object_entry *buffer = jsean_object_buffer(object);
     for (size_t i = 0, j = obj->count; j; i++) {
         if (!obj->data[i].key)
             continue;
@@ -83,7 +83,7 @@ static void write_object(struct string *str, JSON *json, int indent, const char 
     string_append_char(str, '}');
 }
 
-static void write_value(struct string *str, JSON *json, int indent, const char *indent_s)
+static void write_value(struct string *str, jsean_t *json, int indent, const char *indent_s)
 {
     char buf[64];
 
@@ -91,34 +91,34 @@ static void write_value(struct string *str, JSON *json, int indent, const char *
         return;
 
     switch (json->type) {
-    case JSON_TYPE_NULL:
+    case JSEAN_TYPE_NULL:
         string_append_chars(str, "null");
         break;
 
-    case JSON_TYPE_BOOLEAN:
+    case JSEAN_TYPE_BOOLEAN:
         if (json->data._boolean)
             string_append_chars(str, "true");
         else
             string_append_chars(str, "false");
         break;
 
-    case JSON_TYPE_NUMBER:
+    case JSEAN_TYPE_NUMBER:
         snprintf(buf, sizeof(buf), "%f", json->data._double);
         string_append_chars(str, buf);
         break;
 
-    case JSON_TYPE_STRING:
+    case JSEAN_TYPE_STRING:
         string_append_char(str, '"');
         if (json->data._string)
             string_append_chars(str, json->data._string);
         string_append_char(str, '"');
         break;
 
-    case JSON_TYPE_ARRAY:
+    case JSEAN_TYPE_ARRAY:
         write_array(str, json, indent, indent_s);
         break;
 
-    case JSON_TYPE_OBJECT:
+    case JSEAN_TYPE_OBJECT:
         write_object(str, json, indent, indent_s);
         break;
 
@@ -127,7 +127,7 @@ static void write_value(struct string *str, JSON *json, int indent, const char *
     }
 }
 
-struct string json_stringify(JSON *json, const char *indent_s)
+struct string json_stringify(jsean_t *json, const char *indent_s)
 {
     struct string str = {0};
     string_reserve(&str, 512);

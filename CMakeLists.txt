@@ -9,7 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_library(jsean
     # JSON
     src/array.c
-    src/json.c
+    src/value.c
     src/object.c
     src/parse.c
     src/stringify.c

@@ -4,18 +4,17 @@
 // SPDX-License-Identifier: MIT
 //
 
-#include <assert.h>
 #include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <jsean/JSON.h>
+#include <jsean/jsean.h>
 
 #define OBJECT_LOAD_FACTOR_MAX 0.8
 #define OBJECT_LOAD_FACTOR_MIN 0.2
 
-// djb2: http://www.cse.yorku.ca/~oz/hash.html
+// http://www.cse.yorku.ca/~oz/hash.html
 static size_t hash(const char *s)
 {
     size_t h = 0;
@@ -26,24 +25,24 @@ static size_t hash(const char *s)
     return h;
 }
 
-static float load_factor(struct JSON_object *object)
+static float load_factor(struct jsean_object *object)
 {
     return (float)object->count / object->cap;
 }
 
-static struct JSON_object *JSON_object(const JSON *json)
+static struct jsean_object *jsean_get_object(const jsean_t *json)
 {
-    if (!json || json->type != JSON_TYPE_OBJECT)
-    return NULL;
+    if (!json || json->type != JSEAN_TYPE_OBJECT)
+        return NULL;
 
-return json->data._object;
+    return json->data._object;
 }
 
-static JSON *JSON_object_at(const JSON *json, const size_t idx)
+static jsean_t *jsean_object_at(const jsean_t *json, const size_t idx)
 {
-    struct JSON_object *obj;
+    struct jsean_object *obj;
 
-    if ((obj = JSON_object(json)) == NULL || idx >= obj->cap)
+    if ((obj = jsean_get_object(json)) == NULL || idx >= obj->cap)
         return NULL;
 
     if (obj->data[idx].key == NULL)
@@ -52,11 +51,11 @@ static JSON *JSON_object_at(const JSON *json, const size_t idx)
     return &obj->data[idx].value;
 }
 
-static size_t JSON_object_index_of(JSON *json, const char *key)
+static size_t jsean_object_index_of(jsean_t *json, const char *key)
 {
-    struct JSON_object *obj;
+    struct jsean_object *obj;
 
-    if (!(obj = JSON_object(json)))
+    if (!(obj = jsean_get_object(json)))
         return -1;
 
     size_t j = obj->cap, i = hash(key) % j;
@@ -64,7 +63,7 @@ static size_t JSON_object_index_of(JSON *json, const char *key)
         if (i >= obj->cap)
             i = 0;
 
-        if (JSON_object_at(json, i) == NULL)
+        if (jsean_object_at(json, i) == NULL)
             continue;
 
         if (strcmp(key, obj->data[i].key) == 0)
@@ -74,12 +73,12 @@ static size_t JSON_object_index_of(JSON *json, const char *key)
     return -1;
 }
 
-static int JSON_object_resize(JSON *json, size_t new_cap)
+static int jsean_object_resize(jsean_t *json, size_t new_cap)
 {
-    struct JSON_object *obj;
-    struct JSON_object_entry *tmp;
+    struct jsean_object *obj;
+    struct jsean_object_entry *tmp;
 
-    if ((obj = JSON_object(json)) == NULL)
+    if ((obj = jsean_get_object(json)) == NULL)
         return EINVAL;
 
     if ((tmp = realloc(obj->data, sizeof(*obj->data) * new_cap)) == NULL)
@@ -91,12 +90,12 @@ static int JSON_object_resize(JSON *json, size_t new_cap)
     return 0;
 }
 
-static bool JSON_object_rehash(JSON *json, const size_t old_cap)
+static bool jsean_object_rehash(jsean_t *json, const size_t old_cap)
 {
-    struct JSON_object *obj;
+    struct jsean_object *obj;
     const char *key;
 
-    if ((obj = JSON_object(json)) == NULL)
+    if ((obj = jsean_get_object(json)) == NULL)
         return false;
 
     for (size_t i = 0, j; i < old_cap; i++) {
@@ -107,19 +106,19 @@ static bool JSON_object_rehash(JSON *json, const size_t old_cap)
         do {
             if (++j >= obj->cap)
                 j = 0;
-        } while (JSON_object_at(json, j) != NULL);
+        } while (jsean_object_at(json, j) != NULL);
 
         obj->data[j].key = obj->data[i].key;
-        JSON_move(&obj->data[j].value, &obj->data[i].value);
+        jsean_move(&obj->data[j].value, &obj->data[i].value);
         obj->data[i].key = NULL;
     }
 
     return true;
 }
 
-int JSON_set_object(JSON *json)
+int jsean_set_object(jsean_t *json)
 {
-    struct JSON_object *obj;
+    struct jsean_object *obj;
 
     if (!json)
         return EINVAL;
@@ -127,49 +126,49 @@ int JSON_set_object(JSON *json)
     if ((obj = malloc(sizeof(*obj))) == NULL)
         return ENOMEM;
 
-    if ((obj->data = malloc(sizeof(*obj->data) * JSON_OBJECT_DEFAULT_CAPACITY)) == NULL)
+    if ((obj->data = malloc(sizeof(*obj->data) * JSEAN_OBJECT_DEFAULT_CAPACITY)) == NULL)
         return ENOMEM;
 
-    obj->cap = JSON_OBJECT_DEFAULT_CAPACITY;
+    obj->cap = JSEAN_OBJECT_DEFAULT_CAPACITY;
     memset(obj->data, 0, sizeof(*obj->data) * obj->cap);
     obj->count = 0;
 
     json->data._object = obj;
-    json->type = JSON_TYPE_OBJECT;
+    json->type = JSEAN_TYPE_OBJECT;
 
     return 0;
 }
 
-size_t JSON_object_count(const JSON *json)
+size_t jsean_object_count(const jsean_t *json)
 {
-    struct JSON_object *obj;
+    struct jsean_object *obj;
 
-    if (!(obj = JSON_object(json)))
+    if (!(obj = jsean_get_object(json)))
         return 0;
 
     return obj->count;
 }
 
-size_t JSON_object_capacity(const JSON *json)
+size_t jsean_object_capacity(const jsean_t *json)
 {
-    struct JSON_object *obj;
+    struct jsean_object *obj;
 
-    if (!(obj = JSON_object(json)))
+    if (!(obj = jsean_get_object(json)))
         return 0;
 
     return obj->cap;
 }
 
-void JSON_object_clear(JSON *json)
+void jsean_object_clear(jsean_t *json)
 {
-    struct JSON_object *obj;
+    struct jsean_object *obj;
 
-    if (!(obj = JSON_object(json)))
+    if (!(obj = jsean_get_object(json)))
         return;
 
     for (size_t i = 0; i < obj->cap; i++) {
         if (obj->data[i].key != NULL) {
-            JSON_free(&obj->data[i].value);
+            jsean_free(&obj->data[i].value);
             free(obj->data[i].key);
             obj->data[i].key = NULL;
         }
@@ -178,11 +177,11 @@ void JSON_object_clear(JSON *json)
     obj->count = 0;
 }
 
-JSON *JSON_object_get(const JSON *json, const char *key)
+jsean_t *jsean_object_get(const jsean_t *json, const char *key)
 {
-    struct JSON_object *obj;
+    struct jsean_object *obj;
 
-    if ((obj = JSON_object(json)) == NULL || !key)
+    if ((obj = jsean_get_object(json)) == NULL || !key)
         return NULL;
 
     size_t j = obj->cap, i = hash(key) % j;
@@ -200,7 +199,7 @@ JSON *JSON_object_get(const JSON *json, const char *key)
     return NULL;
 }
 
-int JSON_object_insert(JSON *json, const char *key, JSON *value)
+int jsean_object_insert(jsean_t *json, const char *key, jsean_t *value)
 {
     char *copy;
     int retval;
@@ -211,30 +210,30 @@ int JSON_object_insert(JSON *json, const char *key, JSON *value)
     if ((copy = strdup(key)) == NULL)
         return ENOMEM;
 
-    if ((retval = json_internal_object_insert(json, copy, value)) != 0)
+    if ((retval = jsean_internal_object_insert(json, copy, value)) != 0)
         free(copy);
 
     return retval;
 }
 
 // Internal
-int json_internal_object_insert(JSON *json, char *key, JSON *value)
+int jsean_internal_object_insert(jsean_t *json, char *key, jsean_t *value)
 {
-    struct JSON_object *obj;
+    struct jsean_object *obj;
 
     if (!json || !key || !value)
         return EINVAL;
 
-    if ((obj = JSON_object(json)) == NULL)
+    if ((obj = jsean_get_object(json)) == NULL)
         return EINVAL;
 
     // Allocate more memory and rehash when needed
     if (load_factor(obj) > OBJECT_LOAD_FACTOR_MAX) {
-        if (JSON_object_resize(json, 2 * obj->cap) != 0)
+        if (jsean_object_resize(json, 2 * obj->cap) != 0)
             return ENOMEM;
 
-        obj = JSON_object(json);
-        JSON_object_rehash(json, obj->cap / 2);
+        obj = jsean_get_object(json);
+        jsean_object_rehash(json, obj->cap / 2);
     }
 
     size_t i = hash(key) % obj->cap;
@@ -252,51 +251,74 @@ int json_internal_object_insert(JSON *json, char *key, JSON *value)
     }
 
     obj->data[i].key = key;
-    JSON_move(&obj->data[i].value, value);
+    jsean_move(&obj->data[i].value, value);
     obj->count++;
 
     return 0;
 }
 
-int JSON_object_overwrite(JSON *json, const char *key, JSON *value)
+int jsean_object_overwrite(jsean_t *json, const char *key, jsean_t *value)
 {
-    struct JSON_object *object;
-    JSON *tmp;
+    struct jsean_object *object;
+    jsean_t *tmp;
 
     if (!json || !key || !value)
         return EINVAL;
 
-    if ((object = JSON_object(json)) == NULL || JSON_type(value) == JSON_TYPE_UNKNOWN)
+    if ((object = jsean_get_object(json)) == NULL)
         return EINVAL;
 
-    if ((tmp = JSON_object_get(json, key)) == NULL)
-        return JSON_object_insert(json, key, value);
+    if ((tmp = jsean_object_get(json, key)) == NULL)
+        return jsean_object_insert(json, key, value);
 
-    JSON_move(tmp, value);
+    jsean_free(tmp);
+    jsean_move(tmp, value);
+
     return 0;
 }
 
-void JSON_object_remove(JSON *json, const char *key)
+int jsean_internal_object_overwrite(jsean_t *json, char *key, jsean_t *value)
 {
-    struct JSON_object *obj;
+    struct jsean_object *obj;
+    jsean_t *tmp;
+
+    if (!json || !key || !value)
+        return EINVAL;
+
+    if ((obj = jsean_get_object(json)) == NULL)
+        return EINVAL;
+
+    if ((tmp = jsean_object_get(json, key)) == NULL)
+        return jsean_internal_object_insert(json, key, value);
+
+    free(key);
+    jsean_free(tmp);
+    jsean_move(tmp, value);
+
+    return 0;
+}
+
+void jsean_object_remove(jsean_t *json, const char *key)
+{
+    struct jsean_object *obj;
     size_t index;
 
-    if ((obj = JSON_object(json)) == NULL)
+    if ((obj = jsean_get_object(json)) == NULL)
         return;
 
-    if ((index = JSON_object_index_of(json, key)) == (size_t)-1)
+    if ((index = jsean_object_index_of(json, key)) == (size_t)-1)
         return;
 
     free(obj->data[index].key);
     obj->data[index].key = NULL;
-    JSON_free(&obj->data[index].value);
+    jsean_free(&obj->data[index].value);
     obj->count--;
 
     // Rehash and halve the capacity when needed
     if (load_factor(obj) < OBJECT_LOAD_FACTOR_MIN) {
-        if (!JSON_object_rehash(json, obj->cap / 2))
+        if (!jsean_object_rehash(json, obj->cap / 2))
             return;
 
-        JSON_object_resize(json, obj->cap / 2);
+        jsean_object_resize(json, obj->cap / 2);
     }
 }

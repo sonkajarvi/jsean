@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <test.h>
+#include <test/test.h>
 
 #include <jsean/string.h>
 
