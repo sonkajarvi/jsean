@@ -46,7 +46,7 @@ test_case(jsean_move)
     test_assert(jsean_type(&b) == JSEAN_TYPE_BOOLEAN);
     test_assert(jsean_get_boolean(&a) == true);
 
-    jsean_move(&b, &a);
+    jsean_copy(&b, &a);
 
     test_assert(jsean_type(&b) == JSEAN_TYPE_NUMBER);
     test_assert(jsean_get_number(&b) == 2.0);

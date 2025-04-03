@@ -109,7 +109,7 @@ static bool jsean_object_rehash(jsean_t *json, const size_t old_cap)
         } while (jsean_object_at(json, j) != NULL);
 
         obj->data[j].key = obj->data[i].key;
-        jsean_move(&obj->data[j].value, &obj->data[i].value);
+        jsean_copy(&obj->data[j].value, &obj->data[i].value);
         obj->data[i].key = NULL;
     }
 
@@ -251,7 +251,7 @@ int jsean_internal_object_insert(jsean_t *json, char *key, jsean_t *value)
     }
 
     obj->data[i].key = key;
-    jsean_move(&obj->data[i].value, value);
+    jsean_copy(&obj->data[i].value, value);
     obj->count++;
 
     return 0;
@@ -272,7 +272,7 @@ int jsean_object_overwrite(jsean_t *json, const char *key, jsean_t *value)
         return jsean_object_insert(json, key, value);
 
     jsean_free(tmp);
-    jsean_move(tmp, value);
+    jsean_copy(tmp, value);
 
     return 0;
 }
@@ -293,7 +293,7 @@ int jsean_internal_object_overwrite(jsean_t *json, char *key, jsean_t *value)
 
     free(key);
     jsean_free(tmp);
-    jsean_move(tmp, value);
+    jsean_copy(tmp, value);
 
     return 0;
 }

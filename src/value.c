@@ -51,12 +51,12 @@ enum jsean_type jsean_type(const jsean_t *json)
     return json->type;
 }
 
-void jsean_move(void *lhs, const void *rhs)
+void jsean_copy(jsean_t *lhs, const jsean_t *rhs)
 {
     if (!lhs || jsean_type(rhs) == JSEAN_TYPE_UNKNOWN)
         return;
 
-    memcpy(lhs, rhs, sizeof(jsean_t));
+    memcpy(lhs, rhs, sizeof(*lhs));
 }
 
 void jsean_free(jsean_t *json)

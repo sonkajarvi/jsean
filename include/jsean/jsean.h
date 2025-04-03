@@ -106,11 +106,11 @@ struct jsean_object
     size_t count;
 };
 
-// Get type of JSON value
+// Get the type of JSON value
 enum jsean_type jsean_type(const jsean_t *json);
 
-// Move JSON value from @rhs to @lhs
-void jsean_move(void *lhs, const void *rhs);
+// Do a shallow copy on a JSON value
+void jsean_copy(jsean_t *lhs, const jsean_t *rhs);
 
 // Free any JSON value
 void jsean_free(jsean_t *json);

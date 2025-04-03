@@ -124,7 +124,7 @@ int jsean_array_push(jsean_t *json, const jsean_t *val)
         arr = jsean_get_array(json);
     }
 
-    jsean_move(&arr->data[arr->size], val);
+    jsean_copy(&arr->data[arr->size], val);
     arr->size++;
 
     return 0;
@@ -166,7 +166,7 @@ int jsean_array_insert(jsean_t *json, const size_t idx, const jsean_t *val)
     memcpy(&arr->data[idx + 1], &arr->data[idx],
         (arr->size - idx) * sizeof(*arr->data));
 
-    jsean_move(&arr->data[idx], val);
+    jsean_copy(&arr->data[idx], val);
     arr->size++;
 
     return 0;
