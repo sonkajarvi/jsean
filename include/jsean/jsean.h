@@ -23,6 +23,43 @@
 # define JSEAN_ARRAY_DEFAULT_CAPACITY  16
 #endif
 
+#define JSEAN_STATUS_LIST(F)                                  \
+    F(JSEAN_OK, "OK")                                         \
+    \
+    F(JSEAN_NOT_SUPPORTED, "Not supported")                   \
+    F(JSEAN_MEMORY_ERROR, "Memory error")                     \
+    F(JSEAN_UNKNOWN_ERROR, "Unknown error")                   \
+    \
+    F(JSEAN_EXPECTED_EOF, "Expected end-of-file")             \
+    F(JSEAN_UNEXPECTED_EOF, "Unexpected end-of-file")         \
+    \
+    F(JSEAN_EXPECTED_BEGIN_OBJECT, "Expected '{'")            \
+    F(JSEAN_UNEXPECTED_END_OBJECT, "Unexpected '}'")          \
+    \
+    F(JSEAN_EXPECTED_ARRAY_BEGIN, "Expected '['")             \
+    F(JSEAN_UNEXPECTED_END_ARRAY, "Unexpected ']'")           \
+    \
+    F(JSEAN_EXPECTED_NAME_SEPARATOR, "Expected ':'")          \
+    F(JSEAN_EXPECTED_VALUE_SEPARATOR, "Expected ','")         \
+    \
+    F(JSEAN_EXPECTED_QUOTATION_MARK, "Expected '\"'")         \
+    F(JSEAN_UNEXPECTED_CHARACTER, "Unexpected character")     \
+    F(JSEAN_INVALID_UNICODE_ESCAPE, "Invalid Unicode escape") \
+    \
+    F(JSEAN_EXPECTED_FALSE, "Expected \"false\"")             \
+    F(JSEAN_EXPECTED_NULL, "Expected \"null\"")               \
+    F(JSEAN_EXPECTED_TRUE, "Expected \"true\"")               \
+    \
+    F(JSEAN_EXPECTED_DIGIT, "Expected digit")
+
+enum jsean_status
+{
+#define F(name, _) name,
+    JSEAN_STATUS_LIST(F)
+#undef F
+    JSEAN_STATUS_COUNT
+};
+
 // JSON types
 enum jsean_type
 {

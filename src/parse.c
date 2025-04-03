@@ -10,48 +10,19 @@
 #include <string.h>
 
 #include <jsean/jsean.h>
-#include <threads.h>
 
 #define SET_RETVAL_AND_GOTO(x, label) { retval = x; goto label; }
-
-#define STATUS_LIST(F)                                              \
-    F(JSEAN_PARSE_OK, "OK")                                          \
-    F(JSEAN_PARSE_NOT_SUPPORTED, "Not supported")                    \
-    F(JSEAN_PARSE_MEMORY_ERROR, "Memory error")                      \
-    F(JSEAN_PARSE_EXPECTED_BEGIN_OBJECT, "Expected '{'")             \
-    F(JSEAN_PARSE_EXPECTED_ARRAY_BEGIN, "Expected '['")              \
-    F(JSEAN_PARSE_EXPECTED_NAME_SEPARATOR, "Expected ':'")           \
-    F(JSEAN_PARSE_EXPECTED_VALUE_SEPARATOR, "Expected ','")          \
-    F(JSEAN_PARSE_UNEXPECTED_END_OBJECT, "Unexpected '}'")           \
-    F(JSEAN_PARSE_EXPECTED_QUOTATION_MARK, "Expected '\"'")          \
-    F(JSEAN_PARSE_INVALID_UNICODE_ESCAPE, "Invalid Unicode escape")  \
-    F(JSEAN_PARSE_UNEXPECTED_EOF, "Unexpected EOF")                  \
-    F(JSEAN_PARSE_UNEXPECTED_CHARACTER, "UNexpected character")      \
-    F(JSEAN_PARSE_EXPECTED_EOF, "Expected EOF")                      \
-    F(JSEAN_PARSE_EXPECTED_FALSE, "Expected \"false\"")              \
-    F(JSEAN_PARSE_EXPECTED_NULL, "Expected \"null\"")                \
-    F(JSEAN_PARSE_EXPECTED_TRUE, "Expected \"true\"")                \
-    F(JSEAN_PARSE_UNEXPECTED_END_ARRAY, "Unexpected ']'")            \
-    F(JSEAN_PARSE_EXPECTED_DIGIT, "Expected digit")                  \
-    F(JSEAN_PARSE_UNKNOWN, "Unknown error")
-
-enum json_parse_result {
-#define F(name, _) name,
-    STATUS_LIST(F)
-#undef F
-    COUNT
-};
 
 const char *jsean_parse_result_to_string(int result)
 {
     static const char *s[] = {
-#define F(_, str) str,
-        STATUS_LIST(F)
+#define F(_, s) s,
+        JSEAN_STATUS_LIST(F)
 #undef F
     };
 
-    if (result < 0 || result >= COUNT - 1)
-        result = JSEAN_PARSE_UNKNOWN;
+    if (result < 0 || result >= JSEAN_STATUS_COUNT - 1)
+        result = JSEAN_UNKNOWN_ERROR;
 
     return s[result];
 }
@@ -112,7 +83,7 @@ static int read_string(struct reader *rd, char **out)
     char c;
 
     if (read(rd) != '"')
-        return JSEAN_PARSE_EXPECTED_QUOTATION_MARK;
+        return JSEAN_EXPECTED_QUOTATION_MARK;
 
     start = rd->index;
     while ((c = peek(rd)) != '"') {
@@ -134,12 +105,12 @@ static int read_string(struct reader *rd, char **out)
                 read(rd); // Skip 'u'
                 for (int i = 0; i < 4; i++) {
                     if (!is_hex(read(rd)))
-                        return JSEAN_PARSE_INVALID_UNICODE_ESCAPE;
+                        return JSEAN_INVALID_UNICODE_ESCAPE;
                 }
                 break;
 
             default:
-                return JSEAN_PARSE_UNEXPECTED_CHARACTER;
+                return JSEAN_UNEXPECTED_CHARACTER;
             }
             continue;
         }
@@ -149,13 +120,13 @@ static int read_string(struct reader *rd, char **out)
 
     *out = malloc(rd->index - start + 1);
     if (*out == NULL)
-        return JSEAN_PARSE_MEMORY_ERROR;
+        return JSEAN_MEMORY_ERROR;
 
     memcpy(*out, rd->bytes + start, rd->index - start);
     (*out)[rd->index - start] = '\0';
 
     read(rd); // Skip '"'
-    return JSEAN_PARSE_OK;
+    return JSEAN_OK;
 }
 
 static int parse_value(struct reader *rd, jsean_t *out)
@@ -163,21 +134,21 @@ static int parse_value(struct reader *rd, jsean_t *out)
     switch (peek(rd)) {
     case 'f':
         if (strncmp(&rd->bytes[rd->index], "false", 5) != 0)
-            return JSEAN_PARSE_EXPECTED_FALSE;
+            return JSEAN_EXPECTED_FALSE;
         rd->index += 5;
         jsean_set_boolean(out, false);
         break;
 
     case 'n':
         if (strncmp(&rd->bytes[rd->index], "null", 4) != 0)
-            return JSEAN_PARSE_EXPECTED_NULL;
+            return JSEAN_EXPECTED_NULL;
         rd->index += 4;
         jsean_set_null(out);
         break;
 
     case 't':
         if (strncmp(&rd->bytes[rd->index], "true", 4) != 0)
-            return JSEAN_PARSE_EXPECTED_TRUE;
+            return JSEAN_EXPECTED_TRUE;
         rd->index += 4;
         jsean_set_boolean(out, true);
         break;
@@ -196,10 +167,10 @@ static int parse_value(struct reader *rd, jsean_t *out)
         return parse_string(rd, out);
 
     default:
-        return JSEAN_PARSE_UNEXPECTED_CHARACTER;
+        return JSEAN_UNEXPECTED_CHARACTER;
     }
 
-    return JSEAN_PARSE_OK;
+    return JSEAN_OK;
 }
 
 static int parse_object(struct reader *rd, jsean_t *out)
@@ -210,7 +181,7 @@ static int parse_object(struct reader *rd, jsean_t *out)
 
     skip_whitespace(rd);
     if (read(rd) != '{')
-        return JSEAN_PARSE_EXPECTED_BEGIN_OBJECT;
+        return JSEAN_EXPECTED_BEGIN_OBJECT;
 
     if ((retval = jsean_set_object(out)) != 0)
         return retval;
@@ -221,16 +192,16 @@ static int parse_object(struct reader *rd, jsean_t *out)
             break;
 
         skip_whitespace(rd);
-        if ((retval = read_string(rd, &key)) != JSEAN_PARSE_OK)
+        if ((retval = read_string(rd, &key)) != JSEAN_OK)
             goto fail;
 
         skip_whitespace(rd);
         if (read(rd) != ':')
-            SET_RETVAL_AND_GOTO(JSEAN_PARSE_EXPECTED_NAME_SEPARATOR, fail);
+            SET_RETVAL_AND_GOTO(JSEAN_EXPECTED_NAME_SEPARATOR, fail);
 
         skip_whitespace(rd);
         value.type = JSEAN_TYPE_UNKNOWN;
-        if ((retval = parse_value(rd, &value)) != JSEAN_PARSE_OK)
+        if ((retval = parse_value(rd, &value)) != JSEAN_OK)
             goto fail;
 
         if ((retval = jsean_internal_object_overwrite(out, key, &value)) != 0)
@@ -242,11 +213,11 @@ static int parse_object(struct reader *rd, jsean_t *out)
         if (peek(rd) == '}')
             break;
         if (read(rd) != ',')
-            SET_RETVAL_AND_GOTO(JSEAN_PARSE_EXPECTED_VALUE_SEPARATOR, fail);
+            SET_RETVAL_AND_GOTO(JSEAN_EXPECTED_VALUE_SEPARATOR, fail);
 
         skip_whitespace(rd);
         if (peek(rd) == '}')
-            SET_RETVAL_AND_GOTO(JSEAN_PARSE_UNEXPECTED_END_OBJECT, fail);
+            SET_RETVAL_AND_GOTO(JSEAN_UNEXPECTED_END_OBJECT, fail);
     }
 
     read(rd); // Skip '}'
@@ -266,7 +237,7 @@ static int parse_array(struct reader *rd, jsean_t *out)
 
     skip_whitespace(rd);
     if (read(rd) != '[')
-        return JSEAN_PARSE_EXPECTED_ARRAY_BEGIN;
+        return JSEAN_EXPECTED_ARRAY_BEGIN;
 
     if ((retval = jsean_set_array(out, 0)) != 0)
         return retval;
@@ -278,7 +249,7 @@ static int parse_array(struct reader *rd, jsean_t *out)
 
         skip_whitespace(rd);
         value.type = JSEAN_TYPE_UNKNOWN;
-        if ((retval = parse_value(rd, &value)) != JSEAN_PARSE_OK)
+        if ((retval = parse_value(rd, &value)) != JSEAN_OK)
             goto fail;
 
         if ((retval = jsean_array_push(out, &value)) != 0)
@@ -288,11 +259,11 @@ static int parse_array(struct reader *rd, jsean_t *out)
         if (peek(rd) == ']')
             break;
         if (read(rd) != ',')
-            SET_RETVAL_AND_GOTO(JSEAN_PARSE_EXPECTED_VALUE_SEPARATOR, fail);
+            SET_RETVAL_AND_GOTO(JSEAN_EXPECTED_VALUE_SEPARATOR, fail);
 
         skip_whitespace(rd);
         if (peek(rd) == ']')
-            SET_RETVAL_AND_GOTO(JSEAN_PARSE_UNEXPECTED_END_ARRAY, fail);
+            SET_RETVAL_AND_GOTO(JSEAN_UNEXPECTED_END_ARRAY, fail);
     }
 
     read(rd); // Skip ']'
@@ -321,7 +292,7 @@ static int parse_number(struct reader *rd, jsean_t *out)
         while ('0' <= peek(rd) && peek(rd) <= '9')
             read(rd);
         if (start == rd->index)
-            return JSEAN_PARSE_EXPECTED_DIGIT;
+            return JSEAN_EXPECTED_DIGIT;
     }
 
     // Fraction part (optional)
@@ -333,7 +304,7 @@ static int parse_number(struct reader *rd, jsean_t *out)
             read(rd);
 
         if (tmp == rd->index)
-            return JSEAN_PARSE_EXPECTED_DIGIT;
+            return JSEAN_EXPECTED_DIGIT;
     }
 
     // Exponent part (optional)
@@ -348,11 +319,11 @@ static int parse_number(struct reader *rd, jsean_t *out)
             read(rd);
 
         if (tmp == rd->index)
-            return JSEAN_PARSE_EXPECTED_DIGIT;
+            return JSEAN_EXPECTED_DIGIT;
     }
 
     jsean_set_number(out, strtod(&rd->bytes[start], NULL));
-    return JSEAN_PARSE_OK;
+    return JSEAN_OK;
 }
 
 static int parse_string(struct reader *rd, jsean_t *out)
@@ -360,11 +331,11 @@ static int parse_string(struct reader *rd, jsean_t *out)
     char *string;
     int retval;
 
-    if ((retval = read_string(rd, &string)) != JSEAN_PARSE_OK)
+    if ((retval = read_string(rd, &string)) != JSEAN_OK)
         return retval;
 
     jsean_move_string(out, string);
-    return JSEAN_PARSE_OK;
+    return JSEAN_OK;
 }
 
 int json_parse(jsean_t *json, const char *bytes)
