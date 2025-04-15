@@ -30,14 +30,11 @@
     F(JSEAN_MEMORY_ERROR, "Memory error")                     \
     F(JSEAN_UNKNOWN_ERROR, "Unknown error")                   \
     \
-    F(JSEAN_EXPECTED_EOF, "Expected end-of-file")             \
-    F(JSEAN_UNEXPECTED_EOF, "Unexpected end-of-file")         \
+    F(JSEAN_EXPECTED_END_OF_FILE, "Expected end-of-file")     \
+    F(JSEAN_UNEXPECTED_END_OF_FILE, "Unexpected end-of-file") \
     \
-    F(JSEAN_EXPECTED_BEGIN_OBJECT, "Expected '{'")            \
-    F(JSEAN_UNEXPECTED_END_OBJECT, "Unexpected '}'")          \
-    \
-    F(JSEAN_EXPECTED_ARRAY_BEGIN, "Expected '['")             \
-    F(JSEAN_UNEXPECTED_END_ARRAY, "Unexpected ']'")           \
+    F(JSEAN_UNEXPECTED_END_OF_ARRAY, "Unexpected ']'")        \
+    F(JSEAN_UNEXPECTED_END_OF_OBJECT, "Unexpected '}'")       \
     \
     F(JSEAN_EXPECTED_NAME_SEPARATOR, "Expected ':'")          \
     F(JSEAN_EXPECTED_VALUE_SEPARATOR, "Expected ','")         \
