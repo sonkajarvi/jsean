@@ -30,9 +30,8 @@ const char *jsean_parse_result_to_string(int result)
 struct reader
 {
     const char *bytes;
+    const size_t size;
     size_t index;
-    size_t ln;
-    size_t col;
 };
 
 static int read_string(struct reader *rd, char **out);
@@ -43,24 +42,33 @@ static int parse_array(struct reader *rd, jsean_t *out);
 static int parse_number(struct reader *rd, jsean_t *out);
 static int parse_string(struct reader *rd, jsean_t *out);
 
-static inline char peek(struct reader *rd)
+static inline int peek_offset(struct reader *rd, const size_t offset)
 {
-    return rd->bytes[rd->index];
+    return rd->index + offset < rd->size
+        ? rd->bytes[rd->index + offset]
+        : -1;
 }
 
-static char read(struct reader *rd)
+static inline int peek(struct reader *rd)
 {
-    char c = peek(rd);
+    return peek_offset(rd, 0);
+}
+
+static inline int read(struct reader *rd)
+{
+    int c = peek(rd);
     rd->index++;
-
-    if (c == '\n') {
-        rd->ln++;
-        rd->col = 1;
-    } else {
-        rd->col++;
-    }
-
     return c;
+}
+
+static inline const char *curr(struct reader *rd)
+{
+    return &rd->bytes[rd->index];
+}
+
+static inline bool iseof(struct reader *rd)
+{
+    return rd->index >= rd->size;
 }
 
 static void skip_whitespace(struct reader *rd)
