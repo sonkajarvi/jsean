@@ -139,23 +139,26 @@ static int read_string(struct reader *rd, char **out)
 
 static int parse_value(struct reader *rd, jsean_t *out)
 {
+    if (iseof(rd))
+        return JSEAN_UNEXPECTED_END_OF_FILE;
+
     switch (peek(rd)) {
     case 'f':
-        if (strncmp(&rd->bytes[rd->index], "false", 5) != 0)
+        if (strncmp(curr(rd), "false", 5) != 0)
             return JSEAN_EXPECTED_FALSE;
         rd->index += 5;
         jsean_set_boolean(out, false);
         break;
 
     case 'n':
-        if (strncmp(&rd->bytes[rd->index], "null", 4) != 0)
+        if (strncmp(curr(rd), "null", 4) != 0)
             return JSEAN_EXPECTED_NULL;
         rd->index += 4;
         jsean_set_null(out);
         break;
 
     case 't':
-        if (strncmp(&rd->bytes[rd->index], "true", 4) != 0)
+        if (strncmp(curr(rd), "true", 4) != 0)
             return JSEAN_EXPECTED_TRUE;
         rd->index += 4;
         jsean_set_boolean(out, true);
@@ -183,14 +186,11 @@ static int parse_value(struct reader *rd, jsean_t *out)
 
 static int parse_object(struct reader *rd, jsean_t *out)
 {
-    jsean_t value = {0};
-    char *key = NULL;
+    jsean_t value;
+    char *key;
     int retval;
 
-    skip_whitespace(rd);
-    if (read(rd) != '{')
-        return JSEAN_EXPECTED_BEGIN_OBJECT;
-
+    read(rd); // Skip '{'
     if ((retval = jsean_set_object(out)) != 0)
         return retval;
 
@@ -225,7 +225,7 @@ static int parse_object(struct reader *rd, jsean_t *out)
 
         skip_whitespace(rd);
         if (peek(rd) == '}')
-            SET_RETVAL_AND_GOTO(JSEAN_UNEXPECTED_END_OBJECT, fail);
+            SET_RETVAL_AND_GOTO(JSEAN_UNEXPECTED_END_OF_OBJECT, fail);
     }
 
     read(rd); // Skip '}'
@@ -240,13 +240,10 @@ fail:
 
 static int parse_array(struct reader *rd, jsean_t *out)
 {
-    jsean_t value = {0};
+    jsean_t value;
     int retval;
 
-    skip_whitespace(rd);
-    if (read(rd) != '[')
-        return JSEAN_EXPECTED_ARRAY_BEGIN;
-
+    read(rd); // Skip '['
     if ((retval = jsean_set_array(out, 0)) != 0)
         return retval;
 
@@ -256,14 +253,15 @@ static int parse_array(struct reader *rd, jsean_t *out)
             break;
 
         skip_whitespace(rd);
-        value.type = JSEAN_TYPE_UNKNOWN;
         if ((retval = parse_value(rd, &value)) != JSEAN_OK)
             goto fail;
-
         if ((retval = jsean_array_push(out, &value)) != 0)
             goto fail;
 
         skip_whitespace(rd);
+        if (iseof(rd))
+            SET_RETVAL_AND_GOTO(JSEAN_UNEXPECTED_END_OF_FILE, fail);
+
         if (peek(rd) == ']')
             break;
         if (read(rd) != ',')
@@ -271,12 +269,13 @@ static int parse_array(struct reader *rd, jsean_t *out)
 
         skip_whitespace(rd);
         if (peek(rd) == ']')
-            SET_RETVAL_AND_GOTO(JSEAN_UNEXPECTED_END_ARRAY, fail);
+            SET_RETVAL_AND_GOTO(JSEAN_UNEXPECTED_END_OF_ARRAY, fail);
     }
 
     read(rd); // Skip ']'
     skip_whitespace(rd);
     return retval;
+
 fail:
     jsean_free(out);
     return retval;
