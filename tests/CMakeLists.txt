@@ -2,16 +2,12 @@ cmake_minimum_required(VERSION 3.20)
 
 add_executable(tests
     main.c
-
-    json/test_array.c
-    json/test_value.c
-    json/test_object.c
-
-    string/test_string.c
+    jsean/test-array.c
+    jsean/test-object.c
+    jsean/test-value.c
 )
 
 target_include_directories(tests PRIVATE
-    .
     ../include
 )
 

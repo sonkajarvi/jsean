@@ -1,42 +1,50 @@
-#include <test/test.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "test.h"
+
+static struct test_context ctx = { 0 };
+
+void test_add(const char *name, void (*callback)(struct test_result *))
+{
+    if (!ctx.tests || ctx.capacity >= ctx.size) {
+        ctx.capacity += 256;
+        if (!(ctx.tests = realloc(ctx.tests, ctx.capacity * sizeof(*ctx.tests))))
+            exit(ENOMEM);
+    }
+
+    ctx.tests[ctx.size].name = name;
+    ctx.tests[ctx.size].callback = callback;
+    ctx.size++;
+}
+
+void test_print_passed(const char *name)
+{
+    printf("[ \033[92mPASS\033[0m ] %s\n", name);
+}
+
+void test_print_failed(const char *name, struct test_result *result)
+{
+    printf("[ \033[91mFAIL\033[0m ] %s\n", name);
+    printf("  In file %s, line %u:\n", result->file, result->line);
+    printf("    Got %ld from '%s'\n", result->lhs_val, result->lhs_expr);
+    printf("    With %ld from '%s'\n", result->rhs_val, result->rhs_expr);
+}
 
 int main(void)
 {
-    // JSON
-    test_declare(jsean_type);
-    test_declare(jsean_move);
-    test_declare(jsean_free);
-    test_declare(jsean_set_null);
-    test_declare(jsean_set_and_get_boolean);
-    test_declare(jsean_set_and_get_double);
-    test_declare(jsean_set_and_get_string);
+    struct test_result tmp;
 
-    test_declare(jsean_set_array);
-    test_declare(jsean_array_size);
-    test_declare(jsean_array_capacity);
-    test_declare(jsean_array_reserve);
-    test_declare(jsean_array_clear);
-    test_declare(jsean_array_at);
-    test_declare(jsean_array_push);
-    test_declare(jsean_array_pop);
-    test_declare(jsean_array_insert);
-    test_declare(jsean_array_remove);
+    for (size_t i = 0; i < ctx.size; i++) {
+        tmp.status = 0;
+        ctx.tests[i].callback(&tmp);
 
-    test_declare(jsean_set_object);
-    test_declare(jsean_object_count);
-    test_declare(jsean_object_capacity);
-    test_declare(jsean_object_clear);
-    test_declare(jsean_object_get);
-    test_declare(jsean_object_insert);
-    test_declare(jsean_object_overwrite);
-    test_declare(jsean_object_remove);
+        if (tmp.status == TEST_FAILED_)
+            test_print_failed(ctx.tests[i].name, &tmp);
+        else
+            test_print_passed(ctx.tests[i].name);
+    }
 
-    // String
-    test_declare(string_free);
-    test_declare(string_append_char);
-    test_declare(string_append_chars_n);
-    test_declare(string_reserve);
-    test_declare(string_ref);
-    test_declare(string_release);
-    test_declare(string_shrink);
+    free(ctx.tests);
 }
