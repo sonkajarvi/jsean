@@ -13,7 +13,7 @@
 
 static void jsean_array_free(jsean_t *json)
 {
-    struct jsean_array *arr;
+    struct jsean_array_ *arr;
 
     if ((arr = json->data._array) == NULL)
         return;
@@ -27,7 +27,7 @@ static void jsean_array_free(jsean_t *json)
 
 static void jsean_object_free(jsean_t *json)
 {
-    struct jsean_object *obj;
+    struct jsean_object_ *obj;
 
     if (!(obj = json->data._object))
         return;
@@ -45,15 +45,15 @@ static void jsean_object_free(jsean_t *json)
 
 enum jsean_type jsean_type(const jsean_t *json)
 {
-    if (json == NULL || json->type >= JSEAN_TYPE_UNKNOWN)
-        return JSEAN_TYPE_UNKNOWN;
+    if (!json || json->type >= JSEAN_TYPE_COUNT_)
+        return JSEAN_TYPE_UNKNOWN_;
 
     return json->type;
 }
 
-void jsean_copy(jsean_t *lhs, const jsean_t *rhs)
+void jsean_move_(jsean_t *lhs, const jsean_t *rhs)
 {
-    if (!lhs || jsean_type(rhs) == JSEAN_TYPE_UNKNOWN)
+    if (!lhs || jsean_type(rhs) == JSEAN_TYPE_UNKNOWN_)
         return;
 
     memcpy(lhs, rhs, sizeof(*lhs));

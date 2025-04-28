@@ -46,7 +46,7 @@ static void write_array(struct string *str, jsean_t *json, int indent, const cha
 
 static void write_object(struct string *str, jsean_t *json, int indent, const char *indent_s)
 {
-    struct jsean_object *obj = json->data._object;
+    struct jsean_object_ *obj = json->data._object;
 
     string_append_char(str, '{');
     if (indent_s)

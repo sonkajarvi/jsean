@@ -32,7 +32,7 @@ TEST(jsean_type)
     jsean_free(&a);
 }
 
-TEST(jsean_move)
+TEST(jsean_move_)
 {
     jsean_t a, b;
 
@@ -44,7 +44,7 @@ TEST(jsean_move)
     ASSERT_EQ(jsean_type(&b), JSEAN_TYPE_BOOLEAN);
     ASSERT_EQ(jsean_get_boolean(&a), true);
 
-    jsean_copy(&b, &a);
+    jsean_move_(&b, &a);
 
     ASSERT_EQ(jsean_type(&b), JSEAN_TYPE_NUMBER);
     ASSERT_EQ(jsean_get_number(&b), 2.0);

@@ -17,11 +17,11 @@ const char *jsean_parse_result_to_string(int result)
 {
     static const char *s[] = {
 #define F(_, s) s,
-        JSEAN_STATUS_LIST(F)
+        JSEAN_STATUS_LIST_(F)
 #undef F
     };
 
-    if (result < 0 || result >= JSEAN_STATUS_COUNT - 1)
+    if (result < 0 || result >= JSEAN_STATUS_COUNT_ - 1)
         result = JSEAN_UNKNOWN_ERROR;
 
     return s[result];
@@ -208,11 +208,11 @@ static int parse_object(struct reader *rd, jsean_t *out)
             SET_RETVAL_AND_GOTO(JSEAN_EXPECTED_NAME_SEPARATOR, fail);
 
         skip_whitespace(rd);
-        value.type = JSEAN_TYPE_UNKNOWN;
+        value.type = JSEAN_TYPE_UNKNOWN_;
         if ((retval = parse_value(rd, &value)) != JSEAN_OK)
             goto fail;
 
-        if ((retval = jsean_internal_object_overwrite(out, key, &value)) != 0)
+        if ((retval = jsean_internal_object_overwrite_(out, key, &value)) != 0)
             goto fail;
 
         key = NULL;

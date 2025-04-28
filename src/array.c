@@ -11,7 +11,7 @@
 
 #include <jsean/jsean.h>
 
-static struct jsean_array *jsean_get_array(const jsean_t *json)
+static struct jsean_array_ *jsean_get_array(const jsean_t *json)
 {
     if (!json || json->type != JSEAN_TYPE_ARRAY)
         return NULL;
@@ -21,7 +21,7 @@ static struct jsean_array *jsean_get_array(const jsean_t *json)
 
 int jsean_set_array(jsean_t *json, size_t cap)
 {
-    struct jsean_array *arr;
+    struct jsean_array_ *arr;
 
     if (!json)
         return EINVAL;
@@ -44,7 +44,7 @@ int jsean_set_array(jsean_t *json, size_t cap)
 
 size_t jsean_array_size(const jsean_t *json)
 {
-    struct jsean_array *arr;
+    struct jsean_array_ *arr;
 
     if ((arr = jsean_get_array(json)) == NULL)
         return 0;
@@ -54,7 +54,7 @@ size_t jsean_array_size(const jsean_t *json)
 
 size_t jsean_array_capacity(const jsean_t *json)
 {
-    struct jsean_array *arr;
+    struct jsean_array_ *arr;
 
     if ((arr = jsean_get_array(json)) == NULL)
         return 0;
@@ -64,7 +64,7 @@ size_t jsean_array_capacity(const jsean_t *json)
 
 int jsean_array_reserve(jsean_t *json, size_t cap)
 {
-    struct jsean_array *arr;
+    struct jsean_array_ *arr;
     jsean_t *tmp;
 
     if ((arr = jsean_get_array(json)) == NULL)
@@ -85,7 +85,7 @@ int jsean_array_reserve(jsean_t *json, size_t cap)
 
 void jsean_array_clear(jsean_t *json)
 {
-    struct jsean_array *arr;
+    struct jsean_array_ *arr;
 
     if ((arr = jsean_get_array(json)) == NULL)
         return;
@@ -98,7 +98,7 @@ void jsean_array_clear(jsean_t *json)
 
 jsean_t *jsean_array_at(const jsean_t *json, const size_t idx)
 {
-    struct jsean_array *arr;
+    struct jsean_array_ *arr;
 
     if ((arr = jsean_get_array(json)) == NULL || idx >= arr->size)
         return NULL;
@@ -108,12 +108,12 @@ jsean_t *jsean_array_at(const jsean_t *json, const size_t idx)
 
 int jsean_array_push(jsean_t *json, const jsean_t *val)
 {
-    struct jsean_array *arr;
+    struct jsean_array_ *arr;
 
     if ((arr = jsean_get_array(json)) == NULL)
         return EINVAL;
 
-    if (jsean_type(val) == JSEAN_TYPE_UNKNOWN)
+    if (jsean_type(val) == JSEAN_TYPE_UNKNOWN_)
         return EINVAL;
 
     // Allocate more memory when needed
@@ -124,7 +124,7 @@ int jsean_array_push(jsean_t *json, const jsean_t *val)
         arr = jsean_get_array(json);
     }
 
-    jsean_copy(&arr->data[arr->size], val);
+    jsean_move_(&arr->data[arr->size], val);
     arr->size++;
 
     return 0;
@@ -132,7 +132,7 @@ int jsean_array_push(jsean_t *json, const jsean_t *val)
 
 void jsean_array_pop(jsean_t *json)
 {
-    struct jsean_array *arr;
+    struct jsean_array_ *arr;
 
     if ((arr = jsean_get_array(json)) == NULL || arr->size == 0)
         return;
@@ -143,12 +143,12 @@ void jsean_array_pop(jsean_t *json)
 
 int jsean_array_insert(jsean_t *json, const size_t idx, const jsean_t *val)
 {
-    struct jsean_array *arr;
+    struct jsean_array_ *arr;
 
     if ((arr = jsean_get_array(json)) == NULL || idx > arr->size)
         return EINVAL;
 
-    if (jsean_type(val) == JSEAN_TYPE_UNKNOWN)
+    if (jsean_type(val) == JSEAN_TYPE_UNKNOWN_)
         return EINVAL;
 
     if (idx == arr->size)
@@ -166,7 +166,7 @@ int jsean_array_insert(jsean_t *json, const size_t idx, const jsean_t *val)
     memcpy(&arr->data[idx + 1], &arr->data[idx],
         (arr->size - idx) * sizeof(*arr->data));
 
-    jsean_copy(&arr->data[idx], val);
+    jsean_move_(&arr->data[idx], val);
     arr->size++;
 
     return 0;
@@ -174,7 +174,7 @@ int jsean_array_insert(jsean_t *json, const size_t idx, const jsean_t *val)
 
 void jsean_array_remove(jsean_t *json, const size_t idx)
 {
-    struct jsean_array *arr;
+    struct jsean_array_ *arr;
 
     if ((arr = jsean_get_array(json)) == NULL || idx >= arr->size)
         return;

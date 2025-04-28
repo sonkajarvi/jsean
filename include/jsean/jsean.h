@@ -68,6 +68,8 @@ enum jsean_type
     JSEAN_TYPE_ARRAY,
     JSEAN_TYPE_NUMBER,
     JSEAN_TYPE_STRING,
+
+    JSEAN_TYPE_COUNT_
 };
 
 // JSON value
@@ -136,8 +138,8 @@ void jsean_object_remove(jsean_t *json, const char *key);
 void jsean_object_clear(jsean_t *json);
 
 // Internal: Does not copy key
-int jsean_internal_object_insert_(jsean_t *json, char *key, jsean_t *other);
-int jsean_internal_object_overwrite_(jsean_t *json, char *key, jsean_t *value);
+int jsean_internal_object_insert_(jsean_t *json, char *key, jsean_t *val);
+int jsean_internal_object_overwrite_(jsean_t *json, char *key, jsean_t *val);
 
 // JSON array
 int jsean_set_array(jsean_t *json, size_t cap);
@@ -159,7 +161,7 @@ double jsean_get_number(const jsean_t *json);
 
 // JSON string
 int jsean_set_string(jsean_t *json, const char *s);
-// int jsean_move_string(jsean_t *json, char *s);
+int jsean_move_string(jsean_t *json, char *s);
 char *jsean_get_string(jsean_t *json);
 
 #endif // JSEAN_JSEAN_H_
