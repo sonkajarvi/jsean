@@ -78,7 +78,7 @@ static void skip_whitespace(struct reader *rd)
         read(rd);
 }
 
-static inline bool is_hex(const char c)
+static inline bool ishex(const char c)
 {
     return ('0' <= c && c <= '9') ||
            ('a' <= c && c <= 'f') ||
