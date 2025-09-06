@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: MIT
 //
 
-#ifndef JSEAN_JSEAN_H_
-#define JSEAN_JSEAN_H_
+#ifndef JSEAN_JSEAN_H
+#define JSEAN_JSEAN_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -74,11 +74,26 @@ void JSEAN_ArrayRemove(JSEAN *json, const size_t index);
 void JSEAN_ArrayClear(JSEAN *json);
 
 // JSON number
-void JSEAN_SetNumber(JSEAN *json, double d);
+
+// JSEAN_SetNumber - Set a JSON value to a number
+//   @json: A pointer to the JSON value
+//   @num: The number to use
+//
+// Because JSON does not permit values like NaN or Infinity, the value is set
+// to null instead. This works similarly to JavaScript's JSON.stringify.
+// Note: See ECMA-262, section 25.5.2.2.
+//
+void JSEAN_SetNumber(JSEAN *json, double num);
+
+// JSEAN_GetNumber - Get a number from a JSON value
+//   @json: A pointer to the JSON value
+//
+// Returns zero on failure.
+//
 double JSEAN_GetNumber(const JSEAN *json);
 
 // JSON string
 void JSEAN_SetString(JSEAN *json, const char *s);
 const char *JSEAN_GetString(JSEAN *json);
 
-#endif // JSEAN_JSEAN_H_
+#endif // JSEAN_JSEAN_H
