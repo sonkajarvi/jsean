@@ -8,19 +8,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "jsean/JSEAN.h"
+#include "jsean/jsean.h"
 #include "internal.h"
 
 #define JSEAN_ARRAY_DEFAULT_CAPACITY 8
 
-typedef struct {
-    JSEAN *data;
+struct array {
+    jsean *data;
     size_t len;
     size_t cap;
-} ArrayType;
+};
 
 // Grows approximately by a factor of 1.6
-static inline size_t NextCapacity(const size_t n)
+static inline size_t next_capacity(const size_t n)
 {
     if (n == 1)
         return 2;
@@ -28,10 +28,10 @@ static inline size_t NextCapacity(const size_t n)
     return n + (n >> 1) + (n >> 3);
 }
 
-static ArrayType *InitArray(void)
+static struct array *init_array(void)
 {
-    ArrayType *arr;
-    JSEAN *data;
+    struct array *arr;
+    jsean *data;
 
     arr = malloc(sizeof(*arr));
     if (!arr)
@@ -41,7 +41,7 @@ static ArrayType *InitArray(void)
     arr->cap = JSEAN_ARRAY_DEFAULT_CAPACITY;
     arr->data = NULL;
 
-    data = malloc(sizeof(*data) * NextCapacity(arr->cap));
+    data = malloc(sizeof(*data) * next_capacity(arr->cap));
     if (!data)
         return NULL;
     arr->data = data;
@@ -49,30 +49,30 @@ static ArrayType *InitArray(void)
     return arr;
 }
 
-void JSEAN_SetArray(JSEAN *json)
+void jsean_set_array(jsean *json)
 {
     if (json) {
-        json->type = JSEAN_Array;
+        json->type = JSEAN_ARRAY;
         json->pointer = NULL;
     }
 }
 
-size_t JSEAN_ArrayLength(const JSEAN *json)
+size_t jsean_array_length(const jsean *json)
 {
-    const ArrayType *arr;
+    const struct array *arr;
 
-    if (!json || json->type != JSEAN_Array || !json->pointer)
+    if (!json || json->type != JSEAN_ARRAY || !json->pointer)
         return 0;
 
     arr = json->pointer;
     return arr->len;
 }
 
-JSEAN *JSEAN_ArrayAt(const JSEAN *json, const size_t index)
+jsean *jsean_array_at(const jsean *json, const size_t index)
 {
-    const ArrayType *arr;
+    const struct array *arr;
 
-    if (!json || json->type != JSEAN_Array || !json->pointer)
+    if (!json || json->type != JSEAN_ARRAY || !json->pointer)
         return NULL;
 
     arr = json->pointer;
@@ -82,16 +82,16 @@ JSEAN *JSEAN_ArrayAt(const JSEAN *json, const size_t index)
     return &arr->data[index];
 }
 
-JSEAN *JSEAN_ArrayInsert(JSEAN *json, const size_t index, const JSEAN *val)
+jsean *jsean_array_insert(jsean *json, const size_t index, const jsean *val)
 {
-    ArrayType *arr;
-    JSEAN *data;
+    struct array *arr;
+    jsean *data;
     size_t len;
 
-    if (!json || json->type != JSEAN_Array || !val)
+    if (!json || json->type != JSEAN_ARRAY || !val)
         return NULL;
 
-    if (!json->pointer && (json->pointer = InitArray()) == NULL)
+    if (!json->pointer && (json->pointer = init_array()) == NULL)
         return NULL;
 
     arr = json->pointer;
@@ -99,7 +99,7 @@ JSEAN *JSEAN_ArrayInsert(JSEAN *json, const size_t index, const JSEAN *val)
         return NULL;
 
     if (arr->len == arr->cap) {
-        data = realloc(arr->data, sizeof(*data) * NextCapacity(arr->cap));
+        data = realloc(arr->data, sizeof(*data) * next_capacity(arr->cap));
         if (!data)
             return NULL;
         arr->data = data;
@@ -115,12 +115,12 @@ JSEAN *JSEAN_ArrayInsert(JSEAN *json, const size_t index, const JSEAN *val)
     return &arr->data[index];
 }
 
-void JSEAN_ArrayRemove(JSEAN *json, const size_t index, JSEAN *out)
+void jsean_array_remove(jsean *json, const size_t index, jsean *out)
 {
-    ArrayType *arr;
+    struct array *arr;
     size_t len;
 
-    if (!json || json->type != JSEAN_Array || !json->pointer)
+    if (!json || json->type != JSEAN_ARRAY || !json->pointer)
         return;
 
     arr = json->pointer;
@@ -135,17 +135,17 @@ void JSEAN_ArrayRemove(JSEAN *json, const size_t index, JSEAN *out)
     if (out)
         memcpy(out, &arr->data[index], sizeof(*out));
     else
-        JSEAN_Free(&arr->data[index]);
+        jsean_free(&arr->data[index]);
 
     arr->len--;
 }
 
-void JSEAN_ArrayClear(JSEAN *json)
+void jsean_array_clear(jsean *json)
 {
-    ArrayType *arr;
-    JSEAN *tmp, *last;
+    struct array *arr;
+    jsean *tmp, *last;
 
-    if (!json || json->type != JSEAN_Array || !json->pointer)
+    if (!json || json->type != JSEAN_ARRAY || !json->pointer)
         return;
 
     arr = json->pointer;
@@ -153,20 +153,20 @@ void JSEAN_ArrayClear(JSEAN *json)
         return;
 
     for (tmp = &arr->data[0], last = &arr->data[arr->len]; tmp != last; tmp++)
-        JSEAN_Free(tmp);
+        jsean_free(tmp);
     arr->len = 0;
 }
 
-void FreeArray(JSEAN *json)
+void free_array(jsean *json)
 {
-    ArrayType *arr = json->pointer;
-    JSEAN *tmp, *last;
+    struct array *arr = json->pointer;
+    jsean *tmp, *last;
 
     if (!arr || !arr->data)
         return;
 
     for (tmp = &arr->data[0], last = &arr->data[arr->len]; tmp != last; tmp++)
-        JSEAN_Free(tmp);
+        jsean_free(tmp);
 
     free(arr->data);
     free(arr);
