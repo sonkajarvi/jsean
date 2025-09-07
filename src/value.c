@@ -11,8 +11,9 @@
 #include <string.h>
 
 #include "jsean/JSEAN.h"
+#include "internal.h"
 
-static void JSEAN_FreeString(JSEAN *json);
+static void FreeString(JSEAN *json);
 
 JSEAN_Type JSEAN_TypeOf(const JSEAN *json)
 {
@@ -28,8 +29,12 @@ void JSEAN_Free(JSEAN *json)
     case JSEAN_Unknown:
         return;
 
+    case JSEAN_Array:
+        FreeArray(json);
+        break;
+
     case JSEAN_String:
-        JSEAN_FreeString(json);
+        FreeString(json);
         break;
 
     default:
@@ -80,16 +85,16 @@ double JSEAN_GetNumber(const JSEAN *json)
     return 0.0;
 }
 
-void JSEAN_SetString(JSEAN *json, const char *s)
+void JSEAN_SetString(JSEAN *json, const char *str)
 {
     if (json) {
-        if (!s) {
+        if (!str) {
             json->type = JSEAN_Unknown;
             return;
         }
 
         json->type = JSEAN_String;
-        json->pointer = strdup(s);
+        json->pointer = strdup(str);
     }
 }
 
@@ -101,7 +106,7 @@ const char *JSEAN_GetString(JSEAN *json)
     return NULL;
 }
 
-void JSEAN_FreeString(JSEAN *json)
+void FreeString(JSEAN *json)
 {
     if (json)
         free(json->pointer);
