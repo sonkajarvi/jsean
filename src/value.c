@@ -29,6 +29,10 @@ void jsean_free(jsean *json)
     case JSEAN_UNKNOWN:
         return;
 
+    case JSEAN_OBJECT:
+        free_object(json);
+        break;
+
     case JSEAN_ARRAY:
         free_array(json);
         break;

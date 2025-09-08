@@ -11,12 +11,12 @@
 #include "jsean/jsean.h"
 #include "internal.h"
 
-#define JSEAN_ARRAY_DEFAULT_CAPACITY 8
+#define ARRAY_DEFAULT_CAPACITY 8
 
 struct array {
     jsean *data;
-    size_t len;
     size_t cap;
+    size_t len;
 };
 
 // Grows approximately by a factor of 1.6
@@ -37,11 +37,10 @@ static struct array *init_array(void)
     if (!arr)
         return NULL;
 
+    arr->cap = ARRAY_DEFAULT_CAPACITY;
     arr->len = 0;
-    arr->cap = JSEAN_ARRAY_DEFAULT_CAPACITY;
-    arr->data = NULL;
 
-    data = malloc(sizeof(*data) * next_capacity(arr->cap));
+    data = malloc(sizeof(*data) * arr->cap);
     if (!data)
         return NULL;
     arr->data = data;
