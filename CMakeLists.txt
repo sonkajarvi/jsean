@@ -7,28 +7,22 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(jsean
-    # JSON
-    src/array.c
-    src/value.c
-    src/object.c
-    src/parse.c
-    src/stringify.c
-
-    # String utility
-    src/string.c
+    "src/array.c"
+    "src/object.c"
+    "src/value.c"
 )
 
 target_include_directories(jsean PRIVATE
-    include
+    "include"
 )
 
 target_compile_options(jsean PRIVATE
-    -g
-    -O3
-    -Wall
-    -Wextra
-    -Werror
-    -Wstrict-prototypes
+    "-g"
+    "-O2"
+    "-Wall"
+    "-Wextra"
+    "-Werror"
+    "-Wstrict-prototypes"
 )
 
 add_subdirectory(tests)
