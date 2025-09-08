@@ -1,79 +1,64 @@
-//
-// Copyright (c) 2025, sonkajarvi
-//
-// SPDX-License-Identifier: MIT
-//
+#ifndef TESTS_TEST_H_
+#define TESTS_TEST_H_
 
-#ifndef TEST_H
-#define TEST_H
+#include <stdio.h>
 
-#include <stdint.h>
-#include <stdlib.h>
+#define TEST(name_)                                     \
+    void __TEST_CASE_NAME(name_)(struct test_result *); \
+    __attribute__((constructor(102)))                   \
+    void __TEST_WRAPPER_NAME(name_)(void)               \
+    {                                                   \
+        struct test_case tmp = {                        \
+            .func = __TEST_CASE_NAME(name_),            \
+            .name = #name_,                             \
+            .path = __FILE__,                           \
+            .file = __FILE_NAME__                       \
+        };                                              \
+        __test_run(&tmp);                               \
+    }                                                   \
+    void __TEST_CASE_NAME(name_)(struct test_result *__TEST_RESULT)
 
-struct test_result
-{
+#define ASSERT(expr_)                       \
+    {                                       \
+        if ((expr_)) {                      \
+            __TEST_RESULT->status = 0;      \
+        } else {                            \
+            __TEST_RESULT->expr = #expr_;   \
+            __TEST_RESULT->line = __LINE__; \
+            __TEST_RESULT->status = 1;      \
+            return;                         \
+        }                                   \
+    }
+
+#define __TEST_RESULT __result
+#define __TEST_CASE_NAME(name) __test_case_##name
+#define __TEST_WRAPPER_NAME(name) __test_wrapper_##name
+
+struct test_result {
+    const char *expr;
+    unsigned int line;
     int status;
-
-    const char *file;
-    int line;
-
-    const char *lhs_expr;
-    int64_t lhs_val;
-
-    const char *rhs_expr;
-    int64_t rhs_val;
 };
 
-struct test_case
-{
+struct test_case {
+    void (*func)(struct test_result *);
     const char *name;
-    void (*callback)(struct test_result *);
+    const char *path;
+    const char *file;
 };
 
-struct test_context
+static inline void __test_run(struct test_case *test)
 {
-    struct test_case *tests;
-    size_t capacity;
-    size_t size;
-};
+    struct test_result tmp;
 
-void test_add(const char *name, void (*callback)(struct test_result *));
+    test->func(&tmp);
 
-#define TEST_PASSED_ 0
-#define TEST_FAILED_ 1
-#define TEST_CASE_RESULT_PARAM_ result_
+    if (tmp.status == 0) {
+        printf("[ \033[1;92mPASS\033[0m ] %s\n", test->name);
+    } else {
+        printf("[ \033[1;91mFAIL\033[0m ] %s\n  In file %s, line %u:\n    Assertion failed: '%s'\n",
+            test->name, test->path, tmp.line, tmp.expr);
+    }
+}
 
-#define TEST_CASE_NAME_(name) TEST_CASE_##name##_
-#define TEST_WRAPPER_NAME_(name) TEST_WRAPPER_##name##_
-
-#define TEST(name)                                    \
-    void TEST_CASE_NAME_(name)(struct test_result *); \
-    __attribute__((constructor))                      \
-    void TEST_WRAPPER_NAME_(name)(void) {             \
-        test_add(#name, TEST_CASE_NAME_(name));       \
-    }                                                 \
-    void TEST_CASE_NAME_(name)(struct test_result *TEST_CASE_RESULT_PARAM_)
-
-#define ASSERT_(lhs, rhs, x) ({                             \
-        int64_t lhs_ = (int64_t)(lhs);                      \
-        int64_t rhs_ = (int64_t)(rhs);                      \
-        if (!(lhs_ x rhs_)) {                               \
-            TEST_CASE_RESULT_PARAM_->status = TEST_FAILED_; \
-            TEST_CASE_RESULT_PARAM_->file = __FILE__;       \
-            TEST_CASE_RESULT_PARAM_->line = __LINE__;       \
-            TEST_CASE_RESULT_PARAM_->lhs_expr = #lhs;       \
-            TEST_CASE_RESULT_PARAM_->lhs_val = lhs_;        \
-            TEST_CASE_RESULT_PARAM_->rhs_expr = #rhs;       \
-            TEST_CASE_RESULT_PARAM_->rhs_val = rhs_;        \
-            return;                                         \
-        }                                                   \
-    })
-
-#define ASSERT_EQ(lhs, rhs) ASSERT_(lhs, rhs, ==)
-#define ASSERT_NE(lhs, rhs) ASSERT_(lhs, rhs, !=)
-#define ASSERT_GT(lhs, rhs) ASSERT_(lhs, rhs, >)
-#define ASSERT_GE(lhs, rhs) ASSERT_(lhs, rhs, >=)
-#define ASSERT_LT(lhs, rhs) ASSERT_(lhs, rhs, <)
-#define ASSERT_LE(lhs, rhs) ASSERT_(lhs, rhs, <=)
-
-#endif // TEST_H
+#endif // TESTS_TEST_H_
