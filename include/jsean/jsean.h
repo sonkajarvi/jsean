@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2024-2025, sonkajarvi
 //
-// SPDX-License-Identifier: MIT
+// Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
 #ifndef JSEAN_JSEAN_H

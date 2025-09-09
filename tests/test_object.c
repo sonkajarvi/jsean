@@ -1,3 +1,9 @@
+//
+// Copyright (c) 2025, sonkajarvi
+//
+// Licensed under the BSD 2-Clause License. See LICENSE.txt
+//
+
 #include <stddef.h>
 
 #include "jsean/jsean.h"

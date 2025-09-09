@@ -1,3 +1,9 @@
+//
+// Copyright (c) 2025, sonkajarvi
+//
+// Licensed under the BSD 2-Clause License. See LICENSE.txt
+//
+
 #ifndef TESTS_TEST_H_
 #define TESTS_TEST_H_
 
