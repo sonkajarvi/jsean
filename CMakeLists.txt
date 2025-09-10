@@ -9,6 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_library(jsean
     "src/array.c"
     "src/object.c"
+    "src/read.c"
     "src/value.c"
 )
 

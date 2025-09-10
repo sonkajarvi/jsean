@@ -4,6 +4,8 @@ add_executable(tests
     "main.c"
     "test_array.c"
     "test_object.c"
+    "test_read_number.c"
+    "test_read_value.c"
     "test_value.c"
 )
 

@@ -9,6 +9,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 enum jsean_type : unsigned char {
     // This is set to zero, so we can do !jsean_typeof()
@@ -22,6 +23,22 @@ enum jsean_type : unsigned char {
     JSEAN_STRING,
 
     JSEAN_TYPE_COUNT
+};
+
+enum jsean_status {
+    JSEAN_SUCCESS = 0,
+
+    JSEAN_CONVERSION_FAILED,
+    JSEAN_EXPECTED_DIGIT,
+    JSEAN_EXPECTED_FALSE,
+    JSEAN_EXPECTED_NONZERO_DIGIT,
+    JSEAN_EXPECTED_NULL,
+    JSEAN_EXPECTED_MINUS_NONZERO_DIGIT,
+    JSEAN_EXPECTED_TRUE,
+    JSEAN_INVALID_ARGUMENTS,
+    JSEAN_UNEXPECTED_CHARACTER,
+
+    JSEAN_STATUS_COUNT
 };
 
 typedef struct {
@@ -40,7 +57,13 @@ enum jsean_type jsean_typeof(const jsean *json);
 void jsean_free(jsean *json);
 
 // Read and write JSON data
-int jsean_read(const char *bytes, const size_t len, jsean *json);
+enum jsean_status jsean_read(jsean *json, const char *bytes, const size_t len);
+
+static inline enum jsean_status jsean_reads(jsean *json, const char *str)
+{
+    return jsean_read(json, str, strlen(str));
+}
+
 size_t jsean_write(const jsean *json, char *bytes, const size_t len);
 
 
