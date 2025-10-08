@@ -19,15 +19,6 @@ struct array {
     size_t len;
 };
 
-// Grows approximately by a factor of 1.6
-static inline size_t next_capacity(const size_t n)
-{
-    if (n == 1)
-        return 2;
-
-    return n + (n >> 1) + (n >> 3);
-}
-
 static struct array *init_array(void)
 {
     struct array *arr;

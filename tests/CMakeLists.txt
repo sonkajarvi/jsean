@@ -5,6 +5,7 @@ add_executable(tests
     "test_array.c"
     "test_object.c"
     "test_read_number.c"
+    "test_read_string.c"
     "test_read_value.c"
     "test_value.c"
 )

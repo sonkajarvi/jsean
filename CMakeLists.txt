@@ -10,6 +10,7 @@ add_library(jsean
     "src/array.c"
     "src/object.c"
     "src/read.c"
+    "src/strbuf.c"
     "src/value.c"
 )
 

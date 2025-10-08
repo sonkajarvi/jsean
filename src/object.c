@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "jsean/jsean.h"
+#include "internal.h"
 
 #define OBJECT_DEFAULT_CAPACITY 16
 #define OBJECT_LOAD_FACTOR 0.6
@@ -41,15 +42,6 @@ static size_t hash_string(const char *str)
         hash = ((hash << 5) + hash) + c;
 
     return hash;
-}
-
-// Grows approximately by a factor of 1.6
-static inline size_t next_capacity(const size_t n)
-{
-    if (n == 1)
-        return 2;
-
-    return n + (n >> 1) + (n >> 3);
 }
 
 static inline float load_factor(struct object *obj)
