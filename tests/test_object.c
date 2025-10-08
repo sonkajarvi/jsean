@@ -76,7 +76,7 @@ TEST(jsean_object_insert)
 
     // Success
     ASSERT(jsean_object_insert(&a, "a", &b) != NULL);
-    ASSERT(jsean_typeof(jsean_object_get(&a, "a")) == JSEAN_NUMBER);
+    ASSERT(jsean_typeof(jsean_object_get(&a, "a")) == JSEAN_TYPE_NUMBER);
     ASSERT(jsean_get_number(jsean_object_get(&a, "a")) == 32.0);
 
     // Duplicate key
@@ -105,13 +105,13 @@ TEST(jsean_object_replace)
 
     // Success
     ASSERT(jsean_object_replace(&a, "a", &b) != NULL);
-    ASSERT(jsean_typeof(jsean_object_get(&a, "a")) == JSEAN_NUMBER);
+    ASSERT(jsean_typeof(jsean_object_get(&a, "a")) == JSEAN_TYPE_NUMBER);
     ASSERT(jsean_get_number(jsean_object_get(&a, "a")) == 32.0);
 
     // Success
     jsean_set_number(&b, 64.0);
     ASSERT(jsean_object_replace(&a, "a", &b) != NULL);
-    ASSERT(jsean_typeof(jsean_object_get(&a, "a")) == JSEAN_NUMBER);
+    ASSERT(jsean_typeof(jsean_object_get(&a, "a")) == JSEAN_TYPE_NUMBER);
     ASSERT(jsean_get_number(jsean_object_get(&a, "a")) == 64.0);
 
     jsean_free(&a);

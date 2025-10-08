@@ -22,24 +22,24 @@ TEST(jsean_typeof)
     ASSERT(jsean_typeof(&a) == JSEAN_UNKNOWN);
 
     jsean_set_null(&a);
-    ASSERT(jsean_typeof(&a) == JSEAN_NULL);
+    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_NULL);
 
     jsean_set_boolean(&a, true);
-    ASSERT(jsean_typeof(&a) == JSEAN_BOOLEAN);
+    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_BOOLEAN);
 
     jsean_set_object(&a);
-    ASSERT(jsean_typeof(&a) == JSEAN_OBJECT);
+    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_OBJECT);
     jsean_free(&a);
 
     jsean_set_array(&a);
-    ASSERT(jsean_typeof(&a) == JSEAN_ARRAY);
+    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_ARRAY);
     jsean_free(&a);
 
     jsean_set_number(&a, 3.14);
-    ASSERT(jsean_typeof(&a) == JSEAN_NUMBER);
+    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_NUMBER);
 
     jsean_set_string(&a, "");
-    ASSERT(jsean_typeof(&a) == JSEAN_STRING);
+    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_STRING);
     jsean_free(&a);
 }
 
@@ -53,10 +53,10 @@ TEST(jsean_number)
     ASSERT(jsean_get_number(&a) == 2.0);
 
     jsean_set_number(&a, NAN);
-    ASSERT(jsean_typeof(&a) == JSEAN_NULL);
+    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_NULL);
 
     jsean_set_number(&a, INFINITY);
-    ASSERT(jsean_typeof(&a) == JSEAN_NULL);
+    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_NULL);
 }
 
 TEST(jsean_string)

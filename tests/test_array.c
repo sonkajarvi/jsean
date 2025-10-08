@@ -135,9 +135,9 @@ TEST(jsean_array_remove)
     jsean_set_number(&b, 64.0);
     jsean_array_push(&a, &b);
     jsean_set_null(&b);
-    ASSERT(jsean_typeof(&b) != JSEAN_NUMBER);
+    ASSERT(jsean_typeof(&b) != JSEAN_TYPE_NUMBER);
     jsean_array_remove(&a, 0, &b);
-    ASSERT(jsean_typeof(&b) == JSEAN_NUMBER);
+    ASSERT(jsean_typeof(&b) == JSEAN_TYPE_NUMBER);
     ASSERT(jsean_get_number(&b) == 64.0);
 
     jsean_free(&a);
@@ -163,10 +163,10 @@ TEST(jsean_array_pop)
     jsean_set_number(&b, 64.0);
     jsean_array_push(&a, &b);
     jsean_set_null(&b);
-    ASSERT(jsean_typeof(&b) != JSEAN_NUMBER);
+    ASSERT(jsean_typeof(&b) != JSEAN_TYPE_NUMBER);
 
     jsean_array_pop(&a, &b);
-    ASSERT(jsean_typeof(&b) == JSEAN_NUMBER);
+    ASSERT(jsean_typeof(&b) == JSEAN_TYPE_NUMBER);
     ASSERT(jsean_get_number(&b) == 64.0);
 
     jsean_free(&a);

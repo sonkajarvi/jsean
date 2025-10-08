@@ -17,7 +17,7 @@ static void free_string(jsean *json);
 
 enum jsean_type jsean_typeof(const jsean *json)
 {
-    if (json && json->type < JSEAN_TYPE_COUNT)
+    if (json && json->type < __JSEAN_TYPE_COUNT)
         return json->type;
 
     return JSEAN_UNKNOWN;
@@ -29,15 +29,15 @@ void jsean_free(jsean *json)
     case JSEAN_UNKNOWN:
         return;
 
-    case JSEAN_OBJECT:
+    case JSEAN_TYPE_OBJECT:
         free_object(json);
         break;
 
-    case JSEAN_ARRAY:
+    case JSEAN_TYPE_ARRAY:
         free_array(json);
         break;
 
-    case JSEAN_STRING:
+    case JSEAN_TYPE_STRING:
         free_string(json);
         break;
 
@@ -49,20 +49,20 @@ void jsean_free(jsean *json)
 void jsean_set_null(jsean *json)
 {
     if (json)
-        json->type = JSEAN_NULL;
+        json->type = JSEAN_TYPE_NULL;
 }
 
 void jsean_set_boolean(jsean *json, bool b)
 {
     if (json) {
-        json->type = JSEAN_BOOLEAN;
+        json->type = JSEAN_TYPE_BOOLEAN;
         json->boolean = b;
     }
 }
 
 bool jsean_get_boolean(const jsean *json)
 {
-    if (json && json->type == JSEAN_BOOLEAN)
+    if (json && json->type == JSEAN_TYPE_BOOLEAN)
         return json->boolean;
 
     return false;
@@ -72,18 +72,18 @@ void jsean_set_number(jsean *json, double num)
 {
     if (json) {
         if (isnan(num) || isinf(num)) {
-            json->type = JSEAN_NULL;
+            json->type = JSEAN_TYPE_NULL;
             return;
         }
 
-        json->type = JSEAN_NUMBER;
+        json->type = JSEAN_TYPE_NUMBER;
         json->number = num;
     }
 }
 
 double jsean_get_number(const jsean *json)
 {
-    if (json && json->type == JSEAN_NUMBER)
+    if (json && json->type == JSEAN_TYPE_NUMBER)
         return json->number;
 
     return 0.0;
@@ -97,14 +97,14 @@ void jsean_set_string(jsean *json, const char *str)
             return;
         }
 
-        json->type = JSEAN_STRING;
+        json->type = JSEAN_TYPE_STRING;
         json->pointer = strdup(str);
     }
 }
 
 const char *jsean_get_string(jsean *json)
 {
-    if (json && json->type == JSEAN_STRING)
+    if (json && json->type == JSEAN_TYPE_STRING)
         return json->pointer;
 
     return NULL;

@@ -14,7 +14,7 @@
     {                                                      \
         jsean a;                                           \
         ASSERT(jsean_reads(&a, input) == JSEAN_SUCCESS);   \
-        ASSERT(jsean_typeof(&a) == JSEAN_STRING);          \
+        ASSERT(jsean_typeof(&a) == JSEAN_TYPE_STRING);     \
         ASSERT(strcmp(jsean_get_string(&a), output) == 0); \
         jsean_free(&a); \
     }

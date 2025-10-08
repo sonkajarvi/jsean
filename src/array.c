@@ -42,7 +42,7 @@ static struct array *init_array(void)
 void jsean_set_array(jsean *json)
 {
     if (json) {
-        json->type = JSEAN_ARRAY;
+        json->type = JSEAN_TYPE_ARRAY;
         json->pointer = NULL;
     }
 }
@@ -51,7 +51,7 @@ size_t jsean_array_length(const jsean *json)
 {
     const struct array *arr;
 
-    if (!json || json->type != JSEAN_ARRAY || !json->pointer)
+    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->pointer)
         return 0;
 
     arr = json->pointer;
@@ -62,7 +62,7 @@ jsean *jsean_array_at(const jsean *json, const size_t index)
 {
     const struct array *arr;
 
-    if (!json || json->type != JSEAN_ARRAY || !json->pointer)
+    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->pointer)
         return NULL;
 
     arr = json->pointer;
@@ -78,7 +78,7 @@ jsean *jsean_array_insert(jsean *json, const size_t index, const jsean *val)
     jsean *data;
     size_t len;
 
-    if (!json || json->type != JSEAN_ARRAY || !val)
+    if (!json || json->type != JSEAN_TYPE_ARRAY || !val)
         return NULL;
 
     if (!json->pointer && (json->pointer = init_array()) == NULL)
@@ -110,7 +110,7 @@ void jsean_array_remove(jsean *json, const size_t index, jsean *out)
     struct array *arr;
     size_t len;
 
-    if (!json || json->type != JSEAN_ARRAY || !json->pointer)
+    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->pointer)
         return;
 
     arr = json->pointer;
@@ -135,7 +135,7 @@ void jsean_array_clear(jsean *json)
     struct array *arr;
     jsean *tmp, *last;
 
-    if (!json || json->type != JSEAN_ARRAY || !json->pointer)
+    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->pointer)
         return;
 
     arr = json->pointer;

@@ -110,7 +110,7 @@ void jsean_object_print(jsean *json)
 {
     struct object *obj;
 
-    if (jsean_typeof(json) != JSEAN_OBJECT)
+    if (jsean_typeof(json) != JSEAN_TYPE_OBJECT)
         return;
 
     obj = json->pointer;
@@ -130,7 +130,7 @@ void jsean_object_print(jsean *json)
 void jsean_set_object(jsean *json)
 {
     if (json) {
-        json->type = JSEAN_OBJECT;
+        json->type = JSEAN_TYPE_OBJECT;
         json->pointer = NULL;
     }
 }
@@ -139,7 +139,7 @@ size_t jsean_object_count(const jsean *json)
 {
     const struct object *obj;
 
-    if (!json || json->type != JSEAN_OBJECT || !json->pointer)
+    if (!json || json->type != JSEAN_TYPE_OBJECT || !json->pointer)
         return 0;
 
     obj = json->pointer;
@@ -150,7 +150,7 @@ jsean *jsean_object_get(const jsean *json, const char *key)
 {
     struct object *obj;
 
-    if (!json || json->type != JSEAN_OBJECT || !key)
+    if (!json || json->type != JSEAN_TYPE_OBJECT || !key)
         return NULL;
 
     obj = json->pointer;
@@ -178,7 +178,7 @@ jsean *jsean_object_insert(jsean *json, const char *key, jsean *val)
     struct pair *data;
     size_t index, old_cap;
 
-    if (!json || json->type != JSEAN_OBJECT || !key || !val)
+    if (!json || json->type != JSEAN_TYPE_OBJECT || !key || !val)
         return NULL;
 
     if (!json->pointer && (json->pointer = init_object()) == NULL)
@@ -221,7 +221,7 @@ jsean *jsean_object_replace(jsean *json, const char *key, jsean *val)
 {
     jsean *tmp;
 
-    if (!json || json->type != JSEAN_OBJECT || !key || !val)
+    if (!json || json->type != JSEAN_TYPE_OBJECT || !key || !val)
         return NULL;
 
     if (!json->pointer && (json->pointer = init_object()) == NULL)
@@ -241,7 +241,7 @@ void jsean_object_remove(jsean *json, const char *key)
 {
     struct object *obj;
 
-    if (!json || json->type != JSEAN_OBJECT || !key)
+    if (!json || json->type != JSEAN_TYPE_OBJECT || !key)
         return;
 
     obj = json->pointer;
@@ -274,7 +274,7 @@ void jsean_object_clear(jsean *json)
 {
     struct object *obj;
 
-    if (!json || json->type != JSEAN_OBJECT)
+    if (!json || json->type != JSEAN_TYPE_OBJECT)
         return;
 
     obj = json->pointer;

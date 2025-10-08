@@ -11,18 +11,17 @@
 #include <stddef.h>
 #include <string.h>
 
-enum jsean_type : unsigned char {
-    // This is set to zero, so we can do !jsean_typeof()
+enum jsean_type {
     JSEAN_UNKNOWN = 0,
 
-    JSEAN_NULL,
-    JSEAN_BOOLEAN,
-    JSEAN_OBJECT,
-    JSEAN_ARRAY,
-    JSEAN_NUMBER,
-    JSEAN_STRING,
+    JSEAN_TYPE_NULL,
+    JSEAN_TYPE_BOOLEAN,
+    JSEAN_TYPE_OBJECT,
+    JSEAN_TYPE_ARRAY,
+    JSEAN_TYPE_NUMBER,
+    JSEAN_TYPE_STRING,
 
-    JSEAN_TYPE_COUNT
+    __JSEAN_TYPE_COUNT
 };
 
 enum jsean_status {
@@ -43,7 +42,7 @@ enum jsean_status {
     JSEAN_OUT_OF_MEMORY,
     JSEAN_UNEXPECTED_CHARACTER,
 
-    JSEAN_STATUS_COUNT
+    __JSEAN_STATUS_COUNT
 };
 
 typedef struct {
