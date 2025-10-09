@@ -16,6 +16,9 @@ struct parser {
     const char *ptr, *end;
 };
 
+static int parse_value(struct parser *p, jsean *json);
+static int parse_string(struct parser *p, jsean *json);
+
 static inline bool isdec(const char c)
 {
     return c >= '0' && c <= '9';
@@ -81,7 +84,7 @@ static void skip_whitespace(struct parser *p)
         read(p);
 }
 
-// Returns the number of traveled bytes or -1
+// Returns the number of bytes read or -1
 static int is_valid_utf8(const char *ptr)
 {
     int tmp;
@@ -127,8 +130,7 @@ fail:
     return -1;
 }
 
-static int parse_keyword(
-    struct parser *p, const char *str, const size_t len)
+static int parse_keyword(struct parser *p, const char *str, const size_t len)
 {
     for (size_t i = 0; i < len; i++) {
         if (peek(p) != str[i])
@@ -137,6 +139,134 @@ static int parse_keyword(
     }
 
     return JSEAN_SUCCESS;
+}
+
+// object = begin-object [ member *( value-separator member ) ]
+//          end-object
+// member = string name-separator value
+//
+// begin-object    = ws %x7B ws         ; {
+// end-object      = ws %x7D ws         ; }
+// name-separator  = ws %x3A ws         ; :
+// value-separator = ws %x2C ws         ; ,
+//
+static int parse_object(struct parser *p, jsean *json)
+{
+    jsean name, value;
+    int ret;
+
+    jsean_set_object(json);
+
+    read(p);
+
+    skip_whitespace(p);
+    if (peek(p) == '}')
+        goto ret;
+
+#define PARSE_MEMBER_HELPER()                                        \
+    ret = parse_string(p, &name);                                    \
+    if (ret != JSEAN_SUCCESS)                                        \
+        goto err;                                                    \
+                                                                     \
+    skip_whitespace(p);                                              \
+    if (read(p) != ':')                                              \
+        goto err_name;                                               \
+    skip_whitespace(p);                                              \
+                                                                     \
+    ret = parse_value(p, &value);                                    \
+    if (ret != JSEAN_SUCCESS)                                        \
+        goto err_name;                                               \
+    if (!jsean_object_insert(json, jsean_get_string(&name), &value)) \
+        goto err_value;                                              \
+    jsean_free(&name);
+
+    PARSE_MEMBER_HELPER();
+
+    while (1) {
+        skip_whitespace(p);
+        if (peek(p) == '}')
+            goto ret;
+
+        if (read(p) != ',') {
+            ret = JSEAN_EXPECTED_COMMA;
+            goto err;
+        }
+        skip_whitespace(p);
+
+        PARSE_MEMBER_HELPER();
+    }
+
+ret:
+    read(p);
+    return JSEAN_SUCCESS;
+
+err_value:
+    jsean_free(&value);
+err_name:
+    jsean_free(&name);
+err:
+    jsean_free(json);
+    return ret;
+
+#undef PARSE_MEMBER_HELPER
+}
+
+// array = begin-array [ value *( value-separator value ) ] end-array
+//
+// begin-array = ws %x5B ws             ; [
+// end-array = ws %x5D ws               ; ]
+// value-separator = ws %x2C ws         ; ,
+//
+static int parse_array(struct parser *p, jsean *json)
+{
+    jsean value;
+    int ret;
+
+    jsean_set_array(json);
+
+    read(p);
+
+    skip_whitespace(p);
+    if (peek(p) == ']')
+        goto ret;
+
+#define PARSE_VALUE_HELPER()               \
+    ret = parse_value(p, &value);          \
+    if (ret != JSEAN_SUCCESS)              \
+        goto err;                          \
+                                           \
+    if (!jsean_array_push(json, &value)) { \
+        ret = JSEAN_OUT_OF_MEMORY;         \
+        goto err_value;                    \
+    }
+
+    PARSE_VALUE_HELPER();
+
+    while (1) {
+        skip_whitespace(p);
+        if (peek(p) == ']')
+            break;
+
+        if (read(p) != ',') {
+            ret = JSEAN_EXPECTED_COMMA;
+            goto err;
+        }
+        skip_whitespace(p);
+
+        PARSE_VALUE_HELPER();
+    }
+
+ret:
+    read(p);
+    return JSEAN_SUCCESS;
+
+err_value:
+    jsean_free(&value);
+err:
+    jsean_free(json);
+    return ret;
+
+#undef PARSE_VALUE_HELPER
 }
 
 // number = [ minus ] int [ frac ] [ exp ]
@@ -361,6 +491,12 @@ static int parse_value(struct parser *p, jsean *json)
             return JSEAN_EXPECTED_TRUE;
         jsean_set_boolean(json, true);
         break;
+
+    case '{':
+        return parse_object(p, json);
+
+    case '[':
+        return parse_array(p, json);
 
     case '-':
     case '0' ... '9':
