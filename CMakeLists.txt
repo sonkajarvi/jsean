@@ -6,6 +6,8 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(BUILD_TESTS "Build tests" OFF)
+
 add_library(jsean
     "src/array.c"
     "src/object.c"
@@ -19,12 +21,12 @@ target_include_directories(jsean PRIVATE
 )
 
 target_compile_options(jsean PRIVATE
-    "-g"
-    "-O2"
     "-Wall"
     "-Wextra"
     "-Werror"
     "-Wstrict-prototypes"
 )
 
-add_subdirectory(tests)
+if (BUILD_TESTS)
+    add_subdirectory(tests)
+endif()

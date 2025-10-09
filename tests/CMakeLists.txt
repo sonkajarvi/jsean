@@ -19,8 +19,6 @@ target_link_libraries(tests PRIVATE
 )
 
 target_compile_options(tests PRIVATE
-    "-g"
-    "-O2"
     "-Wall"
     "-Wextra"
     "-Werror"
