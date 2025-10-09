@@ -376,7 +376,7 @@ static int parse_value(struct parser *p, jsean *json)
     return JSEAN_SUCCESS;
 }
 
-enum jsean_status jsean_read(jsean *json, const char *bytes, const size_t len)
+int jsean_read(jsean *json, const char *bytes, const size_t len)
 {
     struct parser p;
     int ret;

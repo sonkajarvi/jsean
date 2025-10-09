@@ -46,7 +46,7 @@ enum jsean_status {
 };
 
 typedef struct {
-    enum jsean_type type;
+    unsigned int type;
     union {
         bool boolean;
         double number;
@@ -55,15 +55,15 @@ typedef struct {
 } jsean;
 
 // Get the type of a JSON value
-enum jsean_type jsean_typeof(const jsean *json);
+unsigned int jsean_typeof(const jsean *json);
 
 // Free a JSON value
 void jsean_free(jsean *json);
 
 // Read and write JSON data
-enum jsean_status jsean_read(jsean *json, const char *bytes, const size_t len);
+int jsean_read(jsean *json, const char *bytes, const size_t len);
 
-static inline enum jsean_status jsean_reads(jsean *json, const char *str)
+static inline int jsean_reads(jsean *json, const char *str)
 {
     return jsean_read(json, str, strlen(str));
 }

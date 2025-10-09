@@ -15,7 +15,7 @@
 
 static void free_string(jsean *json);
 
-enum jsean_type jsean_typeof(const jsean *json)
+unsigned int jsean_typeof(const jsean *json)
 {
     if (json && json->type < __JSEAN_TYPE_COUNT)
         return json->type;
