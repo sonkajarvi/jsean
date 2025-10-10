@@ -4,8 +4,6 @@
 // Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
-#include <stdbool.h>
-
 #include "jsean/jsean.h"
 #include "test.h"
 

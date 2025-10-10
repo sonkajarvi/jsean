@@ -9,6 +9,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <string.h>
 
 enum jsean_type {
@@ -38,7 +39,7 @@ enum jsean_type {
     X(JSEAN_INVALID_ARGUMENTS, "invalid arguments")                             \
     X(JSEAN_INVALID_ESCAPE_SEQUENCE, "invalid escape sequence")                 \
     X(JSEAN_INVALID_UNICODE_ESCAPE_SEQUENCE, "invalid Unicode escape sequence") \
-    X(JSEAN_INVALID_UTF8, "invalid UTF-8 sequence")                             \
+    X(JSEAN_INVALID_UTF8_SEQUENCE, "invalid UTF-8 sequence")                    \
     X(JSEAN_OUT_OF_MEMORY, "out of memory")                                     \
     X(JSEAN_EXPECTED_VALUE, "expected 'false', 'null', 'true', '{', '[', '-', '\"' or digit")
 
@@ -67,6 +68,7 @@ void jsean_free(jsean *json);
 
 // Read and write JSON data
 int jsean_read(jsean *json, const char *bytes, const size_t len);
+int jsean_read_stream(jsean *json, FILE *fp);
 
 static inline int jsean_reads(jsean *json, const char *str)
 {

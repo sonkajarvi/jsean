@@ -7,6 +7,7 @@ add_executable(tests
     "test_read_array.c"
     "test_read_number.c"
     "test_read_object.c"
+    "test_read_stream.c"
     "test_read_string.c"
     "test_read_value.c"
     "test_value.c"
@@ -25,4 +26,6 @@ target_compile_options(tests PRIVATE
     "-Wextra"
     "-Werror"
     "-Wstrict-prototypes"
+
+    "-DSAMPLES_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/samples\""
 )
