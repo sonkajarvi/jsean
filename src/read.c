@@ -130,15 +130,15 @@ fail:
     return -1;
 }
 
-static int parse_keyword(struct parser *p, const char *str, const size_t len)
+static bool parse_keyword(struct parser *p, const char *str, const size_t len)
 {
     for (size_t i = 0; i < len; i++) {
         if (peek(p) != str[i])
-            return JSEAN_UNEXPECTED_CHARACTER;
+            return false;
         read(p);
     }
 
-    return JSEAN_SUCCESS;
+    return true;
 }
 
 // object = begin-object [ member *( value-separator member ) ]
@@ -475,19 +475,19 @@ static int parse_value(struct parser *p, jsean *json)
 {
     switch (peek(p)) {
     case 'f':
-        if (parse_keyword(p, "false", 5) != JSEAN_SUCCESS)
+        if (!parse_keyword(p, "false", 5))
             return JSEAN_EXPECTED_FALSE;
         jsean_set_boolean(json, false);
         break;
 
     case 'n':
-        if (parse_keyword(p, "null", 4) != JSEAN_SUCCESS)
+        if (!parse_keyword(p, "null", 4))
             return JSEAN_EXPECTED_NULL;
         jsean_set_null(json);
         break;
 
     case 't':
-        if (parse_keyword(p, "true", 4) != JSEAN_SUCCESS)
+        if (!parse_keyword(p, "true", 4))
             return JSEAN_EXPECTED_TRUE;
         jsean_set_boolean(json, true);
         break;
@@ -506,7 +506,7 @@ static int parse_value(struct parser *p, jsean *json)
         return parse_string(p, json);
 
     default:
-        return JSEAN_UNEXPECTED_CHARACTER;
+        return JSEAN_EXPECTED_VALUE;
     }
 
     return JSEAN_SUCCESS;
@@ -517,7 +517,7 @@ int jsean_read(jsean *json, const char *bytes, const size_t len)
     struct parser p;
     int ret;
 
-    if (!json || !bytes || !len)
+    if (!json || !bytes)
         return JSEAN_INVALID_ARGUMENTS;
 
     if (!strbuf_init(&p.buf))
@@ -534,7 +534,7 @@ int jsean_read(jsean *json, const char *bytes, const size_t len)
 
     skip_whitespace(&p);
     if (peek(&p) != -1) {
-        ret = JSEAN_UNEXPECTED_CHARACTER;
+        ret = JSEAN_EXPECTED_WHITESPACE;
         goto fail;
     }
 

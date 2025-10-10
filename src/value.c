@@ -13,6 +13,12 @@
 #include "jsean/jsean.h"
 #include "internal.h"
 
+static const char *__status_strings[] = {
+#define X(status_, string_) string_,
+    __JSEAN_STATUS_LIST(X)
+#undef X
+};
+
 static void free_string(jsean *json);
 
 unsigned int jsean_typeof(const jsean *json)
@@ -44,6 +50,14 @@ void jsean_free(jsean *json)
     default:
         break;
     }
+}
+
+const char *jsean_status_to_string(int status)
+{
+    if (status > __JSEAN_STATUS_COUNT)
+        return NULL;
+
+    return __status_strings[status];
 }
 
 void jsean_set_null(jsean *json)

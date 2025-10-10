@@ -12,8 +12,7 @@
 #include <string.h>
 
 enum jsean_type {
-    JSEAN_UNKNOWN = 0,
-
+    JSEAN_UNKNOWN,
     JSEAN_TYPE_NULL,
     JSEAN_TYPE_BOOLEAN,
     JSEAN_TYPE_OBJECT,
@@ -24,24 +23,29 @@ enum jsean_type {
     __JSEAN_TYPE_COUNT
 };
 
-enum jsean_status {
-    JSEAN_SUCCESS = 0,
+#define __JSEAN_STATUS_LIST(X)                                                  \
+    X(JSEAN_SUCCESS, "success")                                                 \
+    X(JSEAN_CONVERSION_FAILED, "number conversion failed")                      \
+    X(JSEAN_EXPECTED_COMMA, "expected ','")                                     \
+    X(JSEAN_EXPECTED_DIGIT, "expected digit")                                   \
+    X(JSEAN_EXPECTED_FALSE, "expected 'false'")                                 \
+    X(JSEAN_EXPECTED_MINUS_NONZERO_DIGIT, "expected '-' or non-zero digit")     \
+    X(JSEAN_EXPECTED_NONZERO_DIGIT, "expected non-zero digit")                  \
+    X(JSEAN_EXPECTED_NULL, "expected 'null'")                                   \
+    X(JSEAN_EXPECTED_QUOTATION_MARK, "expected '\"'")                           \
+    X(JSEAN_EXPECTED_TRUE, "expected 'true'")                                   \
+    X(JSEAN_EXPECTED_WHITESPACE, "unexpected non-whitespace character")         \
+    X(JSEAN_INVALID_ARGUMENTS, "invalid arguments")                             \
+    X(JSEAN_INVALID_ESCAPE_SEQUENCE, "invalid escape sequence")                 \
+    X(JSEAN_INVALID_UNICODE_ESCAPE_SEQUENCE, "invalid Unicode escape sequence") \
+    X(JSEAN_INVALID_UTF8, "invalid UTF-8 sequence")                             \
+    X(JSEAN_OUT_OF_MEMORY, "out of memory")                                     \
+    X(JSEAN_EXPECTED_VALUE, "expected 'false', 'null', 'true', '{', '[', '-', '\"' or digit")
 
-    JSEAN_CONVERSION_FAILED,
-    JSEAN_EXPECTED_COMMA,
-    JSEAN_EXPECTED_DIGIT,
-    JSEAN_EXPECTED_FALSE,
-    JSEAN_EXPECTED_MINUS_NONZERO_DIGIT,
-    JSEAN_EXPECTED_NONZERO_DIGIT,
-    JSEAN_EXPECTED_NULL,
-    JSEAN_EXPECTED_QUOTATION_MARK,
-    JSEAN_EXPECTED_TRUE,
-    JSEAN_INVALID_ARGUMENTS,
-    JSEAN_INVALID_ESCAPE_SEQUENCE,
-    JSEAN_INVALID_UNICODE_ESCAPE_SEQUENCE,
-    JSEAN_INVALID_UTF8,
-    JSEAN_OUT_OF_MEMORY,
-    JSEAN_UNEXPECTED_CHARACTER,
+enum jsean_status {
+#define X(status_, string_) status_,
+    __JSEAN_STATUS_LIST(X)
+#undef X
 
     __JSEAN_STATUS_COUNT
 };
@@ -70,6 +74,8 @@ static inline int jsean_reads(jsean *json, const char *str)
 }
 
 size_t jsean_write(const jsean *json, char *bytes, const size_t len);
+
+const char *jsean_status_to_string(int status);
 
 
 // JSON null

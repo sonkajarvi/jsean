@@ -50,9 +50,9 @@ TEST(jsean_read_array_expected_comma)
     ASSERT(jsean_reads(&a, "[true false]") == JSEAN_EXPECTED_COMMA);
 }
 
-TEST(jsean_read_array_unexpected_character)
+TEST(jsean_read_array_expected_value)
 {
     jsean a;
 
-    ASSERT(jsean_reads(&a, "[true, ]") == JSEAN_UNEXPECTED_CHARACTER);
+    ASSERT(jsean_reads(&a, "[true, ]") == JSEAN_EXPECTED_VALUE);
 }

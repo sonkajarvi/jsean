@@ -50,11 +50,11 @@ TEST(jsean_read_object_expected_comma)
     ASSERT(jsean_reads(&a, "{\"a\":1 \"b\":2}") == JSEAN_EXPECTED_COMMA);
 }
 
-TEST(jsean_read_object_unexpected_character)
+TEST(jsean_read_object_expected_value)
 {
     jsean a;
 
-    ASSERT(jsean_reads(&a, "{\"a\":}") == JSEAN_UNEXPECTED_CHARACTER);
+    ASSERT(jsean_reads(&a, "{\"a\":}") == JSEAN_EXPECTED_VALUE);
 }
 
 TEST(jsean_read_object_expected_quotation_mark)

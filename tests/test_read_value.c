@@ -9,15 +9,6 @@
 #include "jsean/jsean.h"
 #include "test.h"
 
-TEST(jsean_read_invalid_arguments)
-{
-    jsean a;
-
-    ASSERT(jsean_read(NULL, "null", 4) == JSEAN_INVALID_ARGUMENTS);
-    ASSERT(jsean_read(&a, NULL, 4) == JSEAN_INVALID_ARGUMENTS);
-    ASSERT(jsean_read(&a, "null", 0) == JSEAN_INVALID_ARGUMENTS);
-}
-
 TEST(jsean_read_false)
 {
     jsean a;
@@ -65,9 +56,31 @@ TEST(jsean_read_expected_true)
     ASSERT(jsean_reads(&a, "tuesday") == JSEAN_EXPECTED_TRUE);
 }
 
-TEST(jsean_read_unexpected_character_after_value)
+TEST(jsean_read_expected_value)
 {
     jsean a;
 
-    ASSERT(jsean_reads(&a, "true false") == JSEAN_UNEXPECTED_CHARACTER);
+    ASSERT(jsean_reads(&a, "") == JSEAN_EXPECTED_VALUE);
+}
+
+TEST(jsean_read_expected_value2)
+{
+    jsean a;
+
+    ASSERT(jsean_reads(&a, "\r\n \t") == JSEAN_EXPECTED_VALUE);
+}
+
+TEST(jsean_read_expected_whitespace)
+{
+    jsean a;
+
+    ASSERT(jsean_reads(&a, "true false") == JSEAN_EXPECTED_WHITESPACE);
+}
+
+TEST(jsean_read_invalid_arguments)
+{
+    jsean a;
+
+    ASSERT(jsean_read(NULL, "null", 4) == JSEAN_INVALID_ARGUMENTS);
+    ASSERT(jsean_read(&a, NULL, 4) == JSEAN_INVALID_ARGUMENTS);
 }
