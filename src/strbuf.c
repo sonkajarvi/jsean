@@ -30,13 +30,17 @@ void strbuf_free(struct strbuf *buf)
 bool strbuf_add_byte(struct strbuf *buf, char byte)
 {
     char *data;
+    size_t cap;
 
     if (buf->len >= buf->cap) {
-        data = realloc(buf->data, sizeof(*data) * next_capacity(buf->cap));
+        cap = next_capacity(buf->cap);
+
+        data = realloc(buf->data, sizeof(*data) * cap);
         if (!data)
             return false;
 
         buf->data = data;
+        buf->cap = cap;
     }
 
     buf->data[buf->len++] = byte;
@@ -46,13 +50,19 @@ bool strbuf_add_byte(struct strbuf *buf, char byte)
 bool strbuf_add_bytes(struct strbuf *buf, const char *bytes, size_t len)
 {
     char *data;
+    size_t cap;
 
-    while (buf->len + len >= buf->cap) {
-        data = realloc(buf->data, sizeof(*data) * next_capacity(buf->cap));
+    if (buf->len + len >= buf->cap) {
+        cap = next_capacity(buf->cap);
+        while (buf->len + len >= cap)
+            cap = next_capacity(cap);
+
+        data = realloc(buf->data, sizeof(*data) * cap);
         if (!data)
             return false;
 
         buf->data = data;
+        buf->cap = cap;
     }
 
     memcpy(&buf->data[buf->len], bytes, len);
@@ -63,13 +73,19 @@ bool strbuf_add_bytes(struct strbuf *buf, const char *bytes, size_t len)
 bool strbuf_add_codepoint(struct strbuf *buf, int cp)
 {
     char *data;
+    size_t cap;
 
-    while (buf->len + 4 >= buf->cap) {
-        data = realloc(buf->data, sizeof(*data) * next_capacity(buf->cap));
+    if (buf->len + 4 >= buf->cap) {
+        cap = next_capacity(buf->cap);
+        while (buf->len + 4 >= cap)
+            cap = next_capacity(cap);
+
+        data = realloc(buf->data, sizeof(*data) * cap);
         if (!data)
             return false;
 
         buf->data = data;
+        buf->cap = cap;
     }
 
     // https://en.wikipedia.org/wiki/UTF-8#Description

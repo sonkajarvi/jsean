@@ -76,7 +76,7 @@ jsean *jsean_array_insert(jsean *json, const size_t index, const jsean *val)
 {
     struct array *arr;
     jsean *data;
-    size_t len;
+    size_t cap, len;
 
     if (!json || json->type != JSEAN_TYPE_ARRAY || !val)
         return NULL;
@@ -89,10 +89,14 @@ jsean *jsean_array_insert(jsean *json, const size_t index, const jsean *val)
         return NULL;
 
     if (arr->len == arr->cap) {
-        data = realloc(arr->data, sizeof(*data) * next_capacity(arr->cap));
+        cap = next_capacity(arr->cap);
+
+        data = realloc(arr->data, sizeof(*data) * cap);
         if (!data)
             return NULL;
+
         arr->data = data;
+        arr->cap = cap;
     }
 
     if (index != arr->len) {
