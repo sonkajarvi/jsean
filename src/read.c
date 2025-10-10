@@ -11,10 +11,35 @@
 #include "jsean/jsean.h"
 #include "internal.h"
 
+#define PEEK(p) ((p)->peek(p))
+#define READ(p) ((p)->read(p))
+
 struct parser {
     struct strbuf buf;
     const char *ptr, *end;
+
+    int (*peek)(struct parser *);
+    int (*read)(struct parser *);
 };
+
+static int peek_buffer(struct parser *p)
+{
+    if (p->ptr >= p->end)
+        return -1;
+
+    return *p->ptr;
+}
+
+static int read_buffer(struct parser *p)
+{
+    int c;
+
+    if ((c = PEEK(p)) == -1)
+        return -1;
+    p->ptr++;
+
+    return c;
+}
 
 static int parse_value(struct parser *p, jsean *json);
 static int parse_string(struct parser *p, jsean *json);
@@ -59,29 +84,10 @@ static inline bool isws(const int c)
     return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 }
 
-static inline int peek(struct parser *p)
-{
-    if (p->ptr >= p->end)
-        return -1;
-
-    return *p->ptr;
-}
-
-static int read(struct parser *p)
-{
-    int c;
-
-    if ((c = peek(p)) == -1)
-        return -1;
-    p->ptr++;
-
-    return c;
-}
-
 static void skip_whitespace(struct parser *p)
 {
-    while (isws(peek(p)))
-        read(p);
+    while (isws(PEEK(p)))
+        READ(p);
 }
 
 // Returns the number of bytes read or -1
@@ -133,9 +139,9 @@ fail:
 static bool parse_keyword(struct parser *p, const char *str, const size_t len)
 {
     for (size_t i = 0; i < len; i++) {
-        if (peek(p) != str[i])
+        if (PEEK(p) != str[i])
             return false;
-        read(p);
+        READ(p);
     }
 
     return true;
@@ -157,10 +163,10 @@ static int parse_object(struct parser *p, jsean *json)
 
     jsean_set_object(json);
 
-    read(p);
+    READ(p);
 
     skip_whitespace(p);
-    if (peek(p) == '}')
+    if (PEEK(p) == '}')
         goto ret;
 
 #define PARSE_MEMBER_HELPER()                                        \
@@ -169,7 +175,7 @@ static int parse_object(struct parser *p, jsean *json)
         goto err;                                                    \
                                                                      \
     skip_whitespace(p);                                              \
-    if (read(p) != ':')                                              \
+    if (READ(p) != ':')                                              \
         goto err_name;                                               \
     skip_whitespace(p);                                              \
                                                                      \
@@ -184,10 +190,10 @@ static int parse_object(struct parser *p, jsean *json)
 
     while (1) {
         skip_whitespace(p);
-        if (peek(p) == '}')
+        if (PEEK(p) == '}')
             goto ret;
 
-        if (read(p) != ',') {
+        if (READ(p) != ',') {
             ret = JSEAN_EXPECTED_COMMA;
             goto err;
         }
@@ -197,7 +203,7 @@ static int parse_object(struct parser *p, jsean *json)
     }
 
 ret:
-    read(p);
+    READ(p);
     return JSEAN_SUCCESS;
 
 err_value:
@@ -224,10 +230,10 @@ static int parse_array(struct parser *p, jsean *json)
 
     jsean_set_array(json);
 
-    read(p);
+    READ(p);
 
     skip_whitespace(p);
-    if (peek(p) == ']')
+    if (PEEK(p) == ']')
         goto ret;
 
 #define PARSE_VALUE_HELPER()               \
@@ -244,10 +250,10 @@ static int parse_array(struct parser *p, jsean *json)
 
     while (1) {
         skip_whitespace(p);
-        if (peek(p) == ']')
+        if (PEEK(p) == ']')
             break;
 
-        if (read(p) != ',') {
+        if (READ(p) != ',') {
             ret = JSEAN_EXPECTED_COMMA;
             goto err;
         }
@@ -257,7 +263,7 @@ static int parse_array(struct parser *p, jsean *json)
     }
 
 ret:
-    read(p);
+    READ(p);
     return JSEAN_SUCCESS;
 
 err_value:
@@ -288,46 +294,46 @@ static int parse_number(struct parser *p, jsean *json)
     double num;
 
     ptr = p->ptr;
-    if (peek(p) == '-')
-        read(p);
+    if (PEEK(p) == '-')
+        READ(p);
 
-    if (peek(p) == '0') {
-        read(p);
+    if (PEEK(p) == '0') {
+        READ(p);
     } else {
-        if (!isnonzero(peek(p)))
+        if (!isnonzero(PEEK(p)))
             return JSEAN_EXPECTED_NONZERO_DIGIT;
-        read(p);
+        READ(p);
 
-        while (isdec(peek(p)))
-            read(p);
+        while (isdec(PEEK(p)))
+            READ(p);
     }
 
     if (ptr == p->ptr)
         return JSEAN_EXPECTED_MINUS_NONZERO_DIGIT;
 
-    if (peek(p) == '.') {
-        read(p);
+    if (PEEK(p) == '.') {
+        READ(p);
 
-        if (!isdec(peek(p)))
+        if (!isdec(PEEK(p)))
             return JSEAN_EXPECTED_DIGIT;
-        read(p);
+        READ(p);
 
-        while (isdec(peek(p)))
-            read(p);
+        while (isdec(PEEK(p)))
+            READ(p);
     }
 
-    if (peek(p) == 'e' || peek(p) == 'E') {
-        read(p);
+    if (PEEK(p) == 'e' || PEEK(p) == 'E') {
+        READ(p);
 
-        if (peek(p) == '-' || peek(p) == '+')
-            read(p);
+        if (PEEK(p) == '-' || PEEK(p) == '+')
+            READ(p);
 
-        if (!isdec(peek(p)))
+        if (!isdec(PEEK(p)))
             return JSEAN_EXPECTED_DIGIT;
-        read(p);
+        READ(p);
 
-        while (isdec(peek(p)))
-            read(p);
+        while (isdec(PEEK(p)))
+            READ(p);
     }
 
     num = strtod(ptr, &endptr);
@@ -344,15 +350,15 @@ static int parse_unicode_escape_sequence(struct parser *p)
     static const int powers[] = { 4096, 256, 16, 1 };
     int cp1, cp2;
 
-    if (peek(p) != 'u')
+    if (PEEK(p) != 'u')
         return -1;
-    read(p);
+    READ(p);
 
     cp1 = 0;
     for (int i = 0; i < 4; i++) {
-        if (!ishex(peek(p)))
+        if (!ishex(PEEK(p)))
             return -1;
-        cp1 += hextoi(read(p)) * powers[i];
+        cp1 += hextoi(READ(p)) * powers[i];
     }
 
     // Not a UTF-16 surrogate pair
@@ -360,18 +366,18 @@ static int parse_unicode_escape_sequence(struct parser *p)
         return cp1;
 
     // Surrogate pair not followed by another pair
-    if (peek(p) != '\\')
+    if (PEEK(p) != '\\')
         return -1;
-    read(p);
-    if (peek(p) != 'u')
+    READ(p);
+    if (PEEK(p) != 'u')
         return -1;
-    read(p);
+    READ(p);
 
     cp2 = 0;
     for (int i = 0; i < 4; i++) {
-        if (!ishex(peek(p)))
+        if (!ishex(PEEK(p)))
             return -1;
-        cp2 += hextoi(read(p)) * powers[i];
+        cp2 += hextoi(READ(p)) * powers[i];
     }
 
     // Expected a surrogate pair
@@ -406,17 +412,17 @@ static int parse_string(struct parser *p, jsean *json)
 
     strbuf_clear(&p->buf);
 
-    if (peek(p) != '"')
+    if (PEEK(p) != '"')
         return JSEAN_EXPECTED_QUOTATION_MARK;
-    read(p);
+    READ(p);
 
     for (;;) {
-        switch (peek(p)) {
+        switch (PEEK(p)) {
         case -1:
             return JSEAN_EXPECTED_QUOTATION_MARK;
 
         case '"':
-            read(p);
+            READ(p);
             strbuf_add_byte(&p->buf, '\0');
             jsean_set_string(json, p->buf.data);
             return JSEAN_SUCCESS;
@@ -425,22 +431,22 @@ static int parse_string(struct parser *p, jsean *json)
         case 0x20 ... 0x21:
         case 0x23 ... 0x5b:
         case 0x5d ... 0x7f:
-            if (!strbuf_add_byte(&p->buf, read(p)))
+            if (!strbuf_add_byte(&p->buf, READ(p)))
                 return JSEAN_OUT_OF_MEMORY;
             break;
 
         // Escape characters
         case '\\':
-            read(p);
-            switch (peek(p)) {
-            case '"':  tmp = '"';  read(p); break;
-            case '\\': tmp = '\\'; read(p); break;
-            case '/':  tmp = '/';  read(p); break;
-            case 'b':  tmp = '\b'; read(p); break;
-            case 'f':  tmp = '\f'; read(p); break;
-            case 'n':  tmp = '\n'; read(p); break;
-            case 'r':  tmp = '\r'; read(p); break;
-            case 't':  tmp = '\t'; read(p); break;
+            READ(p);
+            switch (PEEK(p)) {
+            case '"':  tmp = '"';  READ(p); break;
+            case '\\': tmp = '\\'; READ(p); break;
+            case '/':  tmp = '/';  READ(p); break;
+            case 'b':  tmp = '\b'; READ(p); break;
+            case 'f':  tmp = '\f'; READ(p); break;
+            case 'n':  tmp = '\n'; READ(p); break;
+            case 'r':  tmp = '\r'; READ(p); break;
+            case 't':  tmp = '\t'; READ(p); break;
             case 'u':
                 tmp = parse_unicode_escape_sequence(p);
                 if (tmp == -1)
@@ -473,7 +479,7 @@ static int parse_string(struct parser *p, jsean *json)
 //
 static int parse_value(struct parser *p, jsean *json)
 {
-    switch (peek(p)) {
+    switch (PEEK(p)) {
     case 'f':
         if (!parse_keyword(p, "false", 5))
             return JSEAN_EXPECTED_FALSE;
@@ -512,6 +518,24 @@ static int parse_value(struct parser *p, jsean *json)
     return JSEAN_SUCCESS;
 }
 
+// JSON-text = ws value ws
+//
+static int parse_text(struct parser *p, jsean *json)
+{
+    int ret;
+
+    skip_whitespace(p);
+    ret = parse_value(p, json);
+    if (ret != JSEAN_SUCCESS)
+        return ret;
+
+    skip_whitespace(p);
+    if (PEEK(p) != -1)
+        return JSEAN_EXPECTED_WHITESPACE;
+
+    return JSEAN_SUCCESS;
+}
+
 int jsean_read(jsean *json, const char *bytes, const size_t len)
 {
     struct parser p;
@@ -525,21 +549,11 @@ int jsean_read(jsean *json, const char *bytes, const size_t len)
 
     p.ptr = bytes;
     p.end = p.ptr + len;
+    p.peek = peek_buffer;
+    p.read = read_buffer;
 
-    // JSON-text = ws value ws
-    skip_whitespace(&p);
-    ret = parse_value(&p, json);
-    if (ret != JSEAN_SUCCESS)
-        goto fail;
+    ret = parse_text(&p, json);
 
-    skip_whitespace(&p);
-    if (peek(&p) != -1) {
-        ret = JSEAN_EXPECTED_WHITESPACE;
-        goto fail;
-    }
-
-    ret = JSEAN_SUCCESS;
-fail:
     strbuf_free(&p.buf);
     return ret;
 }
