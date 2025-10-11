@@ -12,18 +12,6 @@
 #include <stdio.h>
 #include <string.h>
 
-enum jsean_type {
-    JSEAN_UNKNOWN,
-    JSEAN_TYPE_NULL,
-    JSEAN_TYPE_BOOLEAN,
-    JSEAN_TYPE_OBJECT,
-    JSEAN_TYPE_ARRAY,
-    JSEAN_TYPE_NUMBER,
-    JSEAN_TYPE_STRING,
-
-    __JSEAN_TYPE_COUNT
-};
-
 #define __JSEAN_STATUS_LIST(X)                                                  \
     X(JSEAN_SUCCESS, "success")                                                 \
     X(JSEAN_CONVERSION_FAILED, "number conversion failed")                      \
@@ -42,6 +30,18 @@ enum jsean_type {
     X(JSEAN_INVALID_UTF8_SEQUENCE, "invalid UTF-8 sequence")                    \
     X(JSEAN_OUT_OF_MEMORY, "out of memory")                                     \
     X(JSEAN_EXPECTED_VALUE, "expected 'false', 'null', 'true', '{', '[', '-', '\"' or digit")
+
+enum jsean_type {
+    JSEAN_UNKNOWN,
+    JSEAN_TYPE_NULL,
+    JSEAN_TYPE_BOOLEAN,
+    JSEAN_TYPE_OBJECT,
+    JSEAN_TYPE_ARRAY,
+    JSEAN_TYPE_NUMBER,
+    JSEAN_TYPE_STRING,
+
+    __JSEAN_TYPE_COUNT
+};
 
 enum jsean_status {
 #define X(status_, string_) status_,
@@ -75,7 +75,7 @@ static inline int jsean_reads(jsean *json, const char *str)
     return jsean_read(json, str, strlen(str));
 }
 
-size_t jsean_write(const jsean *json, char *bytes, const size_t len);
+char *jsean_write(const jsean *json, size_t *len, const char *indent);
 
 const char *jsean_status_to_string(int status);
 

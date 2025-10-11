@@ -1,3 +1,9 @@
+//
+// Copyright (c) 2025, sonkajarvi
+//
+// Licensed under the BSD 2-Clause License. See LICENSE.txt
+//
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,12 +17,14 @@ bool strbuf_init(struct strbuf *buf)
     char *data;
 
     buf->cap = STRBUF_DEFAULT_CAPACITY;
+
     data = malloc(sizeof(*data) * buf->cap);
     if (!data)
         return false;
 
     buf->data = data;
     buf->len = 0;
+
     return true;
 }
 
@@ -44,6 +52,7 @@ bool strbuf_add_byte(struct strbuf *buf, char byte)
     }
 
     buf->data[buf->len++] = byte;
+
     return true;
 }
 
@@ -67,6 +76,7 @@ bool strbuf_add_bytes(struct strbuf *buf, const char *bytes, size_t len)
 
     memcpy(&buf->data[buf->len], bytes, len);
     buf->len += len;
+
     return true;
 }
 

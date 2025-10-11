@@ -14,6 +14,7 @@ add_library(jsean
     "src/read.c"
     "src/strbuf.c"
     "src/value.c"
+    "src/write.c"
 )
 
 target_include_directories(jsean PRIVATE

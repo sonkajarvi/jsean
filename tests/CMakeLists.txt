@@ -11,6 +11,7 @@ add_executable(tests
     "test_read_string.c"
     "test_read_value.c"
     "test_value.c"
+    "test_write_value.c"
 )
 
 target_include_directories(tests PRIVATE
