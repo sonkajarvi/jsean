@@ -60,21 +60,28 @@ const char *jsean_status_to_string(int status)
     return __status_strings[status];
 }
 
-void jsean_set_null(jsean *json)
+bool jsean_set_null(jsean *self)
 {
-    if (json)
-        json->type = JSEAN_TYPE_NULL;
+    if (!self)
+        return false;
+
+    self->type = JSEAN_TYPE_NULL;
+
+    return true;
 }
 
-void jsean_set_boolean(jsean *json, bool b)
+bool jsean_set_bool(jsean *self, bool b)
 {
-    if (json) {
-        json->type = JSEAN_TYPE_BOOLEAN;
-        json->boolean = b;
-    }
+    if (!self)
+        return false;
+
+    self->type = JSEAN_TYPE_BOOLEAN;
+    self->boolean = b;
+
+    return true;
 }
 
-bool jsean_get_boolean(const jsean *json)
+bool jsean_get_bool(const jsean *json)
 {
     if (json && json->type == JSEAN_TYPE_BOOLEAN)
         return json->boolean;

@@ -40,7 +40,7 @@ static bool write_value(struct writer *wr, const jsean *json)
         return write_literal(wr, "null", 4);
 
     case JSEAN_TYPE_BOOLEAN:
-        if (jsean_get_boolean(json))
+        if (jsean_get_bool(json))
             return write_literal(wr, "true", 4);
         else
             return write_literal(wr, "false", 5);

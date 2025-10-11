@@ -80,28 +80,10 @@ char *jsean_write(const jsean *json, size_t *len, const char *indent);
 const char *jsean_status_to_string(int status);
 
 
-// JSON null
-// ---------
+bool jsean_set_null(jsean *self);
 
-// jsean_set_null - Set a JSON value to null.
-// @json: A pointer to the JSON value.
-//
-void jsean_set_null(jsean *json);
-
-
-// JSON boolean
-// ------------
-
-// jsean_set_boolean - Set a JSON value to a boolean.
-// @json: A pointer to the JSON value.
-// @b: The boolean value to use.
-//
-void jsean_set_boolean(jsean *json, bool b);
-
-// jsean_get_boolean - Get a boolean value from a JSON value.
-// @json: A pointer to the JSON value.
-//
-bool jsean_get_boolean(const jsean *json);
+bool jsean_set_bool(jsean *self, bool b);
+bool jsean_get_bool(const jsean *self);
 
 
 // JSON object

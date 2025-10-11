@@ -24,7 +24,7 @@ TEST(jsean_typeof)
     jsean_set_null(&a);
     ASSERT(jsean_typeof(&a) == JSEAN_TYPE_NULL);
 
-    jsean_set_boolean(&a, true);
+    jsean_set_bool(&a, true);
     ASSERT(jsean_typeof(&a) == JSEAN_TYPE_BOOLEAN);
 
     jsean_set_object(&a);
@@ -40,6 +40,29 @@ TEST(jsean_typeof)
 
     jsean_set_string(&a, "");
     ASSERT(jsean_typeof(&a) == JSEAN_TYPE_STRING);
+    jsean_free(&a);
+}
+
+TEST(jsean_null)
+{
+    jsean a;
+
+    ASSERT(!jsean_set_null(NULL));
+    ASSERT(jsean_set_null(&a));
+
+    jsean_free(&a);
+}
+
+TEST(jsean_bool)
+{
+    jsean a;
+
+    ASSERT(!jsean_set_bool(NULL, true));
+    ASSERT(jsean_set_bool(&a, true));
+
+    ASSERT(jsean_get_bool(NULL) == false);
+    ASSERT(jsean_get_bool(&a) == true);
+
     jsean_free(&a);
 }
 

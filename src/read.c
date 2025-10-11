@@ -521,7 +521,7 @@ static int parse_value(struct parser *p, jsean *json)
     case 'f':
         if (!parse_literal(p, "false", 5))
             return JSEAN_EXPECTED_FALSE;
-        jsean_set_boolean(json, false);
+        jsean_set_bool(json, false);
         break;
 
     case 'n':
@@ -533,7 +533,7 @@ static int parse_value(struct parser *p, jsean *json)
     case 't':
         if (!parse_literal(p, "true", 4))
             return JSEAN_EXPECTED_TRUE;
-        jsean_set_boolean(json, true);
+        jsean_set_bool(json, true);
         break;
 
     case '{':
