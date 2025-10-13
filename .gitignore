@@ -1,6 +1,9 @@
-.cache
+.cache/
 
-CMakeFiles
+*.a
+/tests/tests
+
+CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 compile_commands.json
@@ -9,6 +12,4 @@ build.ninja
 .ninja_deps
 .ninja_log
 
-*.a
-
-tests/tests
+Makefile
