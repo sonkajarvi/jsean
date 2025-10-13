@@ -35,7 +35,7 @@ static bool write_literal(struct writer *wr, const char *str, size_t len)
 
 static bool write_value(struct writer *wr, const jsean *json)
 {
-    switch (jsean_typeof(json)) {
+    switch (jsean_get_type(json)) {
     case JSEAN_TYPE_NULL:
         return write_literal(wr, "null", 4);
 

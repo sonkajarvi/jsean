@@ -4,6 +4,7 @@
 // Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,259 +13,246 @@
 #include "jsean/jsean.h"
 #include "internal.h"
 
-#define OBJECT_DEFAULT_CAPACITY 16
-#define OBJECT_LOAD_FACTOR 0.6
-
-#define DEAD ((void *)(size_t)-1)
-
-struct pair {
-    char *key;
-    jsean value;
-};
-
-struct object {
-    struct pair *data;
-    size_t cap;
-    size_t used;
-    size_t dead;
-};
-
-// Hash a string with djb2:
-//
-//     http://www.cse.yorku.ca/~oz/hash.html
-//
-static size_t hash_string(const char *str)
+static inline float get_load_factor(struct obj *obj)
 {
-    size_t hash = 638130537;
-    int c;
-
-    while ((c = *str++))
-        hash = ((hash << 5) + hash) + c;
-
-    return hash;
+    return (float)(obj->len + obj->dead) / obj->cap;
 }
 
-static inline float load_factor(struct object *obj)
+static struct obj *obj_init(void)
 {
-    return (float)(obj->used + obj->dead) / obj->cap;
-}
-
-static struct object *init_object(void)
-{
-    struct object *obj;
-    struct pair *data;
+    struct obj *obj;
+    struct obj_pair *ptr, *end;
 
     obj = malloc(sizeof(*obj));
     if (!obj)
         return NULL;
 
     obj->cap = OBJECT_DEFAULT_CAPACITY;
-    obj->used = 0;
+    obj->len = 0;
     obj->dead = 0;
 
-    data = malloc(sizeof(*data) * obj->cap);
-    if (!data)
+    ptr = malloc(sizeof(*ptr) * obj->cap);
+    if (!ptr)
         return NULL;
 
-    memset(data, 0, sizeof(*data) * obj->cap);
-    obj->data = data;
+    obj->pairs = ptr;
+
+    for (end = ptr + obj->cap; ptr != end; ptr++)
+        ptr->key.type = INTERNAL_TYPE_EMPTY;
 
     return obj;
 }
 
-static void rehash_object(struct object *obj, size_t old_cap)
+static void obj_rehash(struct obj *obj, size_t old_cap)
 {
-    for (size_t i = 0; obj->dead; i++) {
-        if (obj->data[i].key == DEAD) {
-            obj->data[i].key = NULL;
+    struct obj_pair *ptr, *end;
+    size_t index;
+
+    for (ptr = obj->pairs; obj->dead > 0; ptr++) {
+        if (get_internal_type(&ptr->key) == INTERNAL_TYPE_DEAD) {
+            ptr->key.type = INTERNAL_TYPE_EMPTY;
             obj->dead--;
         }
     }
 
-    printf("CAPACITY %zu\n", obj->cap);
-
-    for (size_t i = 0, j; i < old_cap; i++) {
-        if (obj->data[i].key == NULL)
+    for (ptr = obj->pairs, end = ptr + old_cap; ptr != end; ptr++) {
+        if (get_internal_type(&ptr->key) == INTERNAL_TYPE_EMPTY)
             continue;
 
-        j = hash_string(obj->data[i].key) % obj->cap;
-        while (obj->data[j].key != NULL) {
-            j++;
-            if (j >= obj->cap)
-                j = 0;
+        index = str_hash(&ptr->key) % obj->cap;
+        while (get_internal_type(&ptr->key) != INTERNAL_TYPE_EMPTY) {
+            index++;
+
+            if (index >= obj->cap)
+                index = 0;
         }
 
-        memcpy(&obj->data[j], &obj->data[i], sizeof(obj->data[j]));
-        obj->data[i].key = NULL;
-
-        // printf("rehash %zu -> %zu", i, j);
-
-        // if (j >= obj->cap)
-        //     printf(" ERROR\n");
-        // else
-        //     printf("\n");
+        memcpy(&obj->pairs[index], ptr, sizeof(*ptr));
+        ptr->key.type = INTERNAL_TYPE_EMPTY;
     }
 }
 
-void jsean_object_print(jsean *json)
+bool jsean_set_obj(jsean *json)
 {
-    struct object *obj;
+    if (!json)
+        return false;
 
-    if (jsean_typeof(json) != JSEAN_TYPE_OBJECT)
-        return;
+    json->ao_ptr = NULL;
+    json->type = JSEAN_TYPE_OBJECT;
 
-    obj = json->pointer;
-    if (!obj || !obj->data)
-        return;
-
-    for (size_t i = 0; i < obj->cap; i++) {
-        if (obj->data[i].key == NULL)
-            printf("%3zu : -\n", i);
-        else if (obj->data[i].key == DEAD)
-            printf("%3zu : dead\n", i);
-        else
-            printf("%3zu : %s %f\n", i, obj->data[i].key, obj->data[i].value.number);
-    }
+    return true;
 }
 
-void jsean_set_object(jsean *json)
+size_t jsean_obj_len(const jsean *json)
 {
-    if (json) {
-        json->type = JSEAN_TYPE_OBJECT;
-        json->pointer = NULL;
-    }
-}
+    const struct obj *obj;
 
-size_t jsean_object_count(const jsean *json)
-{
-    const struct object *obj;
-
-    if (!json || json->type != JSEAN_TYPE_OBJECT || !json->pointer)
+    if (jsean_get_type(json) != JSEAN_TYPE_OBJECT)
         return 0;
 
-    obj = json->pointer;
-    return obj->used;
+    obj = json->ao_ptr;
+
+    return obj ? obj->len : 0;
 }
 
-jsean *jsean_object_get(const jsean *json, const char *key)
+jsean *jsean_obj_at(const jsean *json, const jsean *key)
 {
-    struct object *obj;
+    struct obj *obj;
+    struct obj_pair *ptr, *end;
 
-    if (!json || json->type != JSEAN_TYPE_OBJECT || !key)
+    if (jsean_get_type(json) != JSEAN_TYPE_OBJECT)
         return NULL;
 
-    obj = json->pointer;
-    if (!obj || !obj->used || !obj->data)
+    if (jsean_get_type(key) != JSEAN_TYPE_STRING)
         return NULL;
 
-    for (size_t j = obj->cap, i = hash_string(key) % j; j; i++, j--) {
-        if (i >= obj->cap)
-            i = 0;
+    obj = json->ao_ptr;
+    if (!obj)
+        return NULL;
 
-        if (obj->data[i].key == NULL)
+    ptr = obj->pairs + (str_hash(key) % obj->cap);
+    end = ptr + obj->cap;
+
+    for (;; ptr++) {
+        if (ptr == end)
+            ptr = obj->pairs;
+
+        if (get_internal_type(&ptr->key) == INTERNAL_TYPE_EMPTY)
             return NULL;
-        if (obj->data[i].key == DEAD)
+
+        if (get_internal_type(&ptr->key) == INTERNAL_TYPE_DEAD)
             continue;
-        if (strcmp(key, obj->data[i].key) == 0)
-            return &obj->data[i].value;
+
+        if (str_cmp(&ptr->key, key))
+            return &ptr->val;
     }
 
     return NULL;
 }
 
-jsean *jsean_object_insert(jsean *json, const char *key, jsean *val)
+jsean *jsean_obj_add(jsean *json, jsean *key, jsean *val)
 {
-    struct object *obj;
-    struct pair *data;
-    size_t index, old_cap;
+    struct obj *obj;
+    struct obj_pair *ptr, *end;
+    size_t old_cap;
 
-    if (!json || json->type != JSEAN_TYPE_OBJECT || !key || !val)
+    if (jsean_get_type(json) != JSEAN_TYPE_OBJECT)
         return NULL;
 
-    if (!json->pointer && (json->pointer = init_object()) == NULL)
+    if (jsean_get_type(key) != JSEAN_TYPE_STRING)
         return NULL;
 
-    obj = json->pointer;
-    if (load_factor(obj) > OBJECT_LOAD_FACTOR) {
+    if (jsean_get_type(val) == JSEAN_TYPE_UNKNOWN)
+        return NULL;
+
+    if (!json->ao_ptr && (json->ao_ptr = obj_init()) == NULL)
+        return NULL;
+
+    obj = json->ao_ptr;
+
+    if (get_load_factor(obj) > OBJECT_LOAD_FACTOR_MAX) {
         old_cap = obj->cap;
-        data = realloc(obj->data, sizeof(*data) * next_capacity(old_cap));
-        if (!data)
+
+        ptr = realloc(obj->pairs, sizeof(*ptr) * next_capacity(old_cap));
+        if (!ptr)
             return NULL;
 
         obj->cap = next_capacity(old_cap);
-        memset(&data[old_cap], 0, sizeof(*data) * (obj->cap - old_cap));
 
-        obj->data = data;
-        rehash_object(obj, old_cap);
+        for (end = ptr + obj->cap; ptr != end; ptr++)
+            ptr->key.type = INTERNAL_TYPE_EMPTY;
+
+        obj->pairs = ptr;
+        obj_rehash(obj, old_cap);
     }
 
-    for (index = hash_string(key) % obj->cap;; index++) {
-        if (index >= obj->cap)
-            index = 0;
+    ptr = obj->pairs + (str_hash(key) % obj->cap);
+    end = ptr + obj->cap;
 
-        if (obj->data[index].key == NULL)
+    for (;; ptr++) {
+        if (ptr == end)
+            ptr = obj->pairs;
+
+        if (get_internal_type(&ptr->key) == INTERNAL_TYPE_EMPTY)
             break;
-        if (obj->data[index].key == DEAD)
+
+        if (get_internal_type(&ptr->key) == INTERNAL_TYPE_DEAD)
             continue;
-        if (strcmp(key, obj->data[index].key) == 0)
+
+        if (str_cmp(&ptr->key, key))
             return NULL;
     }
 
-    obj->data[index].key = strdup(key);
-    memcpy(&obj->data[index].value, val, sizeof(*val));
-    obj->used++;
+    memcpy(&ptr->key, key, sizeof(*key));
+    memcpy(&ptr->val, val, sizeof(*val));
+    obj->len++;
 
-    return &obj->data[index].value;
+    return &ptr->val;
 }
 
-jsean *jsean_object_replace(jsean *json, const char *key, jsean *val)
+jsean *jsean_obj_set(jsean *json, jsean *key, jsean *val)
 {
     jsean *tmp;
 
-    if (!json || json->type != JSEAN_TYPE_OBJECT || !key || !val)
+    if (jsean_get_type(json) != JSEAN_TYPE_OBJECT)
         return NULL;
 
-    if (!json->pointer && (json->pointer = init_object()) == NULL)
+    if (jsean_get_type(key) != JSEAN_TYPE_STRING)
         return NULL;
 
-    tmp = jsean_object_get(json, key);
+    if (jsean_get_type(val) == JSEAN_TYPE_UNKNOWN)
+        return NULL;
+
+    if (!json->ao_ptr && (json->ao_ptr = obj_init()) == NULL)
+        return NULL;
+
+    tmp = jsean_obj_at(json, key);
     if (!tmp)
-        return jsean_object_insert(json, key, val);
+        return jsean_obj_add(json, key, val);
 
     jsean_free(tmp);
     memcpy(tmp, val, sizeof(*val));
 
+    jsean_set_null(key);
+
     return tmp;
 }
 
-void jsean_object_remove(jsean *json, const char *key)
+void jsean_obj_del(jsean *json, const jsean *key)
 {
-    struct object *obj;
+    struct obj *obj;
+    struct obj_pair *ptr, *end;
 
-    if (!json || json->type != JSEAN_TYPE_OBJECT || !key)
+    if (jsean_get_type(json) != JSEAN_TYPE_OBJECT)
         return;
 
-    obj = json->pointer;
-    if (!obj || !obj->data)
+    if (jsean_get_type(key) != JSEAN_TYPE_STRING)
         return;
 
-    if (!obj->used)
+    obj = json->ao_ptr;
+    if (!obj || obj->len == 0)
         return;
 
-    for (size_t j = obj->cap, i = hash_string(key) % j; j; i++, j--) {
-        if (i >= obj->cap)
-            i = 0;
+    ptr = obj->pairs + (str_hash(key) % obj->cap);
+    end = ptr + obj->cap;
 
-        if (obj->data[i].key == NULL)
+    for (;; ptr++) {
+        if (ptr == end)
+            ptr = obj->pairs;
+
+        if (get_internal_type(&ptr->key) == INTERNAL_TYPE_EMPTY)
             break;
-        if (obj->data[i].key == DEAD)
-            continue;
-        if (strcmp(key, obj->data[i].key) == 0) {
-            free(obj->data[i].key);
-            obj->data[i].key = DEAD;
-            jsean_free(&obj->data[i].value);
 
-            obj->used--;
+        if (get_internal_type(&ptr->key) == INTERNAL_TYPE_DEAD)
+            continue;
+
+        if (str_cmp(&ptr->key, key)) {
+            str_free(&ptr->key);
+            jsean_free(&ptr->val);
+
+            ptr->key.type = INTERNAL_TYPE_DEAD;
+
+            obj->len--;
             obj->dead++;
         }
     }
@@ -272,36 +260,42 @@ void jsean_object_remove(jsean *json, const char *key)
 
 void jsean_object_clear(jsean *json)
 {
-    struct object *obj;
+    struct obj *obj;
+    struct obj_pair *ptr, *end;
 
-    if (!json || json->type != JSEAN_TYPE_OBJECT)
+    if (jsean_get_type(json) != JSEAN_TYPE_OBJECT)
         return;
 
-    obj = json->pointer;
-    if (!obj || !obj->data)
+    obj = json->ao_ptr;
+    if (!obj || obj->len == 0)
         return;
 
-    for (size_t i = 0; i < obj->cap && obj->used; i++) {
-        if (obj->data[i].key == NULL || obj->data[i].key == DEAD) {
+    for (ptr = obj->pairs, end = ptr + obj->cap; ptr != end; ptr++) {
+        if (get_internal_type(&ptr->key) == INTERNAL_TYPE_EMPTY)
             continue;
-        } else {
-            free(obj->data[i].key);
-            obj->data[i].key = NULL;
-            jsean_free(&obj->data[i].value);
+        else if (get_internal_type(&ptr->key) == INTERNAL_TYPE_DEAD)
+            continue;
+        else {
+            str_free(&ptr->key);
+            jsean_free(&ptr->val);
 
-            obj->used--;
+            ptr->key.type = INTERNAL_TYPE_EMPTY;
         }
     }
+
+    obj->len = 0;
+    obj->dead = 0;
 }
 
-void free_object(jsean *json)
+void obj_free(jsean *json)
 {
-    struct object *obj = json->pointer;
+    struct obj *obj = json->ao_ptr;
 
-    if (!obj || !obj->data)
+    if (!obj)
         return;
 
     jsean_object_clear(json);
-    free(obj->data);
+
+    free(obj->pairs);
     free(obj);
 }

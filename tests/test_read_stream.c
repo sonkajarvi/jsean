@@ -18,7 +18,7 @@ TEST(jsean_read_stream_64kb)
     ASSERT(fp != NULL);
 
     ASSERT(jsean_read_stream(&a, fp) == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_ARRAY);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_ARRAY);
     ASSERT(jsean_array_length(&a) > 0);
 
     fclose(fp);
@@ -34,7 +34,7 @@ TEST(jsean_read_stream_128kb)
     ASSERT(fp != NULL);
 
     ASSERT(jsean_read_stream(&a, fp) == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_ARRAY);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_ARRAY);
     ASSERT(jsean_array_length(&a) > 0);
 
     fclose(fp);
@@ -50,7 +50,7 @@ TEST(jsean_read_stream_256kb)
     ASSERT(fp != NULL);
 
     ASSERT(jsean_read_stream(&a, fp) == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_ARRAY);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_ARRAY);
     ASSERT(jsean_array_length(&a) > 0);
 
     fclose(fp);
@@ -66,7 +66,7 @@ TEST(jsean_read_stream_512kb)
     ASSERT(fp != NULL);
 
     ASSERT(jsean_read_stream(&a, fp) == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_ARRAY);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_ARRAY);
     ASSERT(jsean_array_length(&a) > 0);
 
     fclose(fp);
@@ -82,7 +82,7 @@ TEST(jsean_read_stream_1mb)
     ASSERT(fp != NULL);
 
     ASSERT(jsean_read_stream(&a, fp) == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_ARRAY);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_ARRAY);
     ASSERT(jsean_array_length(&a) > 0);
 
     fclose(fp);
@@ -98,7 +98,7 @@ TEST(jsean_read_stream_5mb)
     ASSERT(fp != NULL);
 
     ASSERT(jsean_read_stream(&a, fp) == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_ARRAY);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_ARRAY);
     ASSERT(jsean_array_length(&a) > 0);
 
     fclose(fp);

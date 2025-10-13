@@ -19,7 +19,7 @@ TEST(jsean_write_false)
     char *buf;
 
     jsean_set_bool(&a, false);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_BOOLEAN);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_BOOLEAN);
     ASSERT(jsean_get_bool(&a) == false);
 
     buf = jsean_write(&a, NULL, NULL);
@@ -36,7 +36,7 @@ TEST(jsean_write_null)
     char *buf;
 
     jsean_set_null(&a);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_NULL);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_NULL);
 
     buf = jsean_write(&a, NULL, NULL);
     ASSERT(buf != NULL);
@@ -52,7 +52,7 @@ TEST(jsean_write_true)
     char *buf;
 
     jsean_set_bool(&a, true);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_BOOLEAN);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_BOOLEAN);
     ASSERT(jsean_get_bool(&a) == true);
 
     buf = jsean_write(&a, NULL, NULL);

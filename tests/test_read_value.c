@@ -14,7 +14,7 @@ TEST(jsean_read_false)
     jsean a;
 
     ASSERT(jsean_reads(&a, "false") == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_BOOLEAN);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_BOOLEAN);
     ASSERT(jsean_get_bool(&a) == false);
 }
 
@@ -23,7 +23,7 @@ TEST(jsean_read_null)
     jsean a;
 
     ASSERT(jsean_reads(&a, "null") == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_NULL);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_NULL);
 }
 
 TEST(jsean_read_true)
@@ -31,7 +31,7 @@ TEST(jsean_read_true)
     jsean a;
 
     ASSERT(jsean_reads(&a, "true") == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_BOOLEAN);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_BOOLEAN);
     ASSERT(jsean_get_bool(&a) == true);
 }
 

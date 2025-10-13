@@ -13,46 +13,43 @@
 #include "jsean/jsean.h"
 #include "internal.h"
 
+static const char *__type_strings[] = {
+#define X(type_, str_) str_,
+    __JSEAN_TYPE_LIST(X)
+#undef X
+};
+
 static const char *__status_strings[] = {
-#define X(status_, string_) string_,
+#define X(status_, str_) str_,
     __JSEAN_STATUS_LIST(X)
 #undef X
 };
 
-static void free_string(jsean *json);
-
-unsigned int jsean_typeof(const jsean *json)
+unsigned int get_internal_type(const jsean *json)
 {
-    if (json && json->type < __JSEAN_TYPE_COUNT)
-        return json->type;
+    if (!json || json->type >= __INTERNAL_TYPE_COUNT)
+        return INTERNAL_TYPE_UNKNOWN;
 
-    return JSEAN_UNKNOWN;
+    return json->type;
 }
 
-void jsean_free(jsean *json)
+unsigned int jsean_get_type(const jsean *json)
 {
-    switch (jsean_typeof(json)) {
-    case JSEAN_UNKNOWN:
-        return;
+    if (!json || json->type >= __JSEAN_TYPE_COUNT)
+        return JSEAN_TYPE_UNKNOWN;
 
-    case JSEAN_TYPE_OBJECT:
-        free_object(json);
-        break;
-
-    case JSEAN_TYPE_ARRAY:
-        free_array(json);
-        break;
-
-    case JSEAN_TYPE_STRING:
-        free_string(json);
-        break;
-
-    default:
-        break;
-    }
+    return json->type;
 }
 
-const char *jsean_status_to_string(int status)
+const char *jsean_type_to_str(unsigned int type)
+{
+    if (type > __JSEAN_TYPE_COUNT)
+        return NULL;
+
+    return __type_strings[type];
+}
+
+const char *jsean_status_to_str(int status)
 {
     if (status > __JSEAN_STATUS_COUNT)
         return NULL;
@@ -60,23 +57,43 @@ const char *jsean_status_to_string(int status)
     return __status_strings[status];
 }
 
-bool jsean_set_null(jsean *self)
+void jsean_free(jsean *json)
 {
-    if (!self)
+    switch (jsean_get_type(json)) {
+    case JSEAN_TYPE_OBJECT:
+        obj_free(json);
+        break;
+
+    case JSEAN_TYPE_ARRAY:
+        free_array(json);
+        break;
+
+    case JSEAN_TYPE_STRING:
+        str_free(json);
+        break;
+
+    default:
+        break;
+    }
+}
+
+bool jsean_set_null(jsean *json)
+{
+    if (!json)
         return false;
 
-    self->type = JSEAN_TYPE_NULL;
+    json->type = JSEAN_TYPE_NULL;
 
     return true;
 }
 
-bool jsean_set_bool(jsean *self, bool b)
+bool jsean_set_bool(jsean *json, bool b)
 {
-    if (!self)
+    if (!json)
         return false;
 
-    self->type = JSEAN_TYPE_BOOLEAN;
-    self->boolean = b;
+    json->type = JSEAN_TYPE_BOOLEAN;
+    json->b_val = b;
 
     return true;
 }
@@ -84,55 +101,109 @@ bool jsean_set_bool(jsean *self, bool b)
 bool jsean_get_bool(const jsean *json)
 {
     if (json && json->type == JSEAN_TYPE_BOOLEAN)
-        return json->boolean;
+        return json->b_val;
 
     return false;
 }
 
-void jsean_set_number(jsean *json, double num)
+bool jsean_set_num(jsean *json, double num)
 {
     if (json) {
-        if (isnan(num) || isinf(num)) {
-            json->type = JSEAN_TYPE_NULL;
-            return;
-        }
+        if (isnan(num) || isinf(num))
+            return false;
 
         json->type = JSEAN_TYPE_NUMBER;
-        json->number = num;
+        json->n_val = num;
+
+        return true;
     }
+
+    return false;
 }
 
-double jsean_get_number(const jsean *json)
+double jsean_get_num(const jsean *json)
 {
     if (json && json->type == JSEAN_TYPE_NUMBER)
-        return json->number;
+        return json->n_val;
 
     return 0.0;
 }
 
-void jsean_set_string(jsean *json, const char *str)
+bool jsean_set_str(jsean *json, char *str, size_t len, void (*free_fn)(void *))
 {
-    if (json) {
-        if (!str) {
-            json->type = JSEAN_UNKNOWN;
-            return;
-        }
+    if (!json || !str || len > STRING_LENGTH_MAX)
+        return false;
 
-        json->type = JSEAN_TYPE_STRING;
-        json->pointer = strdup(str);
+    if (!len) {
+        len = strlen(str);
+
+        if (len > STRING_LENGTH_MAX)
+            return false;
     }
+
+    json->s_val = str;
+    json->s_len = len;
+    json->s_free_fn = free_fn;
+    json->type = JSEAN_TYPE_STRING;
+
+    return true;
 }
 
-const char *jsean_get_string(jsean *json)
+const char *jsean_get_str(const jsean *json)
 {
     if (json && json->type == JSEAN_TYPE_STRING)
-        return json->pointer;
+        return json->s_val;
 
     return NULL;
 }
 
-void free_string(jsean *json)
+size_t jsean_str_len(const jsean *json)
 {
-    if (json)
-        free(json->pointer);
+    if (!json || !json->s_val || json->type != JSEAN_TYPE_STRING)
+        return 0;
+
+    return json->s_len;
 }
+
+bool str_cmp(const jsean *json, const jsean *other)
+{
+    if (jsean_get_type(json) != JSEAN_TYPE_STRING)
+        return false;
+
+    if (jsean_get_type(other) != JSEAN_TYPE_STRING)
+        return false;
+
+    if (jsean_str_len(json) != jsean_str_len(other))
+        return false;
+
+    return memcmp(json->s_val, other->s_val, jsean_str_len(json)) == 0;
+}
+
+// Hashes the string with djb2, http://www.cse.yorku.ca/~oz/hash.html
+size_t str_hash(const jsean *json)
+{
+    size_t hash;
+
+    if (!json || json->type != JSEAN_TYPE_STRING)
+        return STRING_HASH_UNDEFINED;
+
+    hash = 638130537;
+    for (size_t i = 0; i < jsean_str_len(json); i++)
+        hash = ((hash << 5) + hash) + json->s_val[i];
+
+    if (hash == STRING_HASH_UNDEFINED)
+        hash++;
+
+    return hash;
+}
+
+void str_free(jsean *json)
+{
+    if (json && json->s_val && json->s_free_fn)
+        json->s_free_fn(json->s_val);
+}
+
+// JZ_TYPE_STRING
+// JZ_TYPE_STRING_REF
+// JZ_TYPE_STRING_EMPTY
+ 

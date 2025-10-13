@@ -43,7 +43,7 @@ void jsean_set_array(jsean *json)
 {
     if (json) {
         json->type = JSEAN_TYPE_ARRAY;
-        json->pointer = NULL;
+        json->ao_ptr = NULL;
     }
 }
 
@@ -51,10 +51,10 @@ size_t jsean_array_length(const jsean *json)
 {
     const struct array *arr;
 
-    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->pointer)
+    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->ao_ptr)
         return 0;
 
-    arr = json->pointer;
+    arr = json->ao_ptr;
     return arr->len;
 }
 
@@ -62,10 +62,10 @@ jsean *jsean_array_at(const jsean *json, const size_t index)
 {
     const struct array *arr;
 
-    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->pointer)
+    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->ao_ptr)
         return NULL;
 
-    arr = json->pointer;
+    arr = json->ao_ptr;
     if (index >= arr->len)
         return NULL;
 
@@ -81,10 +81,10 @@ jsean *jsean_array_insert(jsean *json, const size_t index, const jsean *val)
     if (!json || json->type != JSEAN_TYPE_ARRAY || !val)
         return NULL;
 
-    if (!json->pointer && (json->pointer = init_array()) == NULL)
+    if (!json->ao_ptr && (json->ao_ptr = init_array()) == NULL)
         return NULL;
 
-    arr = json->pointer;
+    arr = json->ao_ptr;
     if (index > arr->len)
         return NULL;
 
@@ -114,10 +114,10 @@ void jsean_array_remove(jsean *json, const size_t index, jsean *out)
     struct array *arr;
     size_t len;
 
-    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->pointer)
+    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->ao_ptr)
         return;
 
-    arr = json->pointer;
+    arr = json->ao_ptr;
     if (!arr->data || index >= arr->len)
         return;
 
@@ -139,10 +139,10 @@ void jsean_array_clear(jsean *json)
     struct array *arr;
     jsean *tmp, *last;
 
-    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->pointer)
+    if (!json || json->type != JSEAN_TYPE_ARRAY || !json->ao_ptr)
         return;
 
-    arr = json->pointer;
+    arr = json->ao_ptr;
     if (!arr->len)
         return;
 
@@ -153,7 +153,7 @@ void jsean_array_clear(jsean *json)
 
 void free_array(jsean *json)
 {
-    struct array *arr = json->pointer;
+    struct array *arr = json->ao_ptr;
     jsean *tmp, *last;
 
     if (!arr || !arr->data)

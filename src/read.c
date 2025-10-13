@@ -135,7 +135,7 @@ static int parse_object(struct parser *p, jsean *json)
     jsean name, value;
     int ret;
 
-    jsean_set_object(json);
+    jsean_set_obj(json);
 
     READ(p);
 
@@ -143,26 +143,27 @@ static int parse_object(struct parser *p, jsean *json)
     if (PEEK(p) == '}')
         goto end;
 
-#define PARSE_MEMBER_HELPER()                                        \
-    ret = parse_string(p, &name);                                    \
-    if (ret != JSEAN_SUCCESS)                                        \
-        goto err;                                                    \
-                                                                     \
-    skip_whitespace(p);                                              \
-    if (READ(p) != ':')                                              \
-        goto err_name;                                               \
-    skip_whitespace(p);                                              \
-                                                                     \
-    ret = parse_value(p, &value);                                    \
-    if (ret != JSEAN_SUCCESS)                                        \
-        goto err_name;                                               \
-    if (!jsean_object_insert(json, jsean_get_string(&name), &value)) \
-        goto err_value;                                              \
-    jsean_free(&name);
+#define PARSE_MEMBER_HELPER()                  \
+    ret = parse_string(p, &name);              \
+    if (ret != JSEAN_SUCCESS)                  \
+        goto err;                              \
+                                               \
+    skip_whitespace(p);                        \
+    if (READ(p) != ':')                        \
+        goto err_name;                         \
+    skip_whitespace(p);                        \
+                                               \
+    ret = parse_value(p, &value);              \
+    if (ret != JSEAN_SUCCESS)                  \
+        goto err_name;                         \
+    if (!jsean_obj_set(json, &name, &value)) { \
+        ret = JSEAN_OUT_OF_MEMORY;             \
+        goto err_value;                        \
+    }
 
     PARSE_MEMBER_HELPER();
 
-    while (1) {
+    while (true) {
         skip_whitespace(p);
         if (PEEK(p) == '}')
             goto end;
@@ -222,7 +223,7 @@ static int parse_array(struct parser *p, jsean *json)
 
     PARSE_VALUE_HELPER();
 
-    while (1) {
+    while (true) {
         skip_whitespace(p);
         if (PEEK(p) == ']')
             break;
@@ -316,7 +317,7 @@ static int parse_number(struct parser *p, jsean *json)
     if (&p->buf.data[p->buf.len - 1] != endptr)
         return JSEAN_CONVERSION_FAILED;
 
-    jsean_set_number(json, num);
+    jsean_set_num(json, num);
 
     return JSEAN_SUCCESS;
 }
@@ -441,7 +442,8 @@ end:
 //
 static int parse_string(struct parser *p, jsean *json)
 {
-    int tmp;
+    char *ptr;
+    int ret;
 
     strbuf_clear(&p->buf);
 
@@ -456,8 +458,14 @@ static int parse_string(struct parser *p, jsean *json)
 
         case '"':
             READ(p);
-            strbuf_add_byte(&p->buf, '\0');
-            jsean_set_string(json, p->buf.data);
+
+            ptr = malloc(p->buf.len);
+            if (!ptr)
+                return JSEAN_OUT_OF_MEMORY;
+
+            memcpy(ptr, p->buf.data, p->buf.len);
+            jsean_set_str(json, ptr, p->buf.len, free);
+
             return JSEAN_SUCCESS;
 
         // ASCII characters
@@ -472,31 +480,34 @@ static int parse_string(struct parser *p, jsean *json)
         case '\\':
             READ(p);
             switch (PEEK(p)) {
-            case '"':  tmp = '"';  READ(p); break;
-            case '\\': tmp = '\\'; READ(p); break;
-            case '/':  tmp = '/';  READ(p); break;
-            case 'b':  tmp = '\b'; READ(p); break;
-            case 'f':  tmp = '\f'; READ(p); break;
-            case 'n':  tmp = '\n'; READ(p); break;
-            case 'r':  tmp = '\r'; READ(p); break;
-            case 't':  tmp = '\t'; READ(p); break;
+            case '"':  ret = '"';  READ(p); break;
+            case '\\': ret = '\\'; READ(p); break;
+            case '/':  ret = '/';  READ(p); break;
+            case 'b':  ret = '\b'; READ(p); break;
+            case 'f':  ret = '\f'; READ(p); break;
+            case 'n':  ret = '\n'; READ(p); break;
+            case 'r':  ret = '\r'; READ(p); break;
+            case 't':  ret = '\t'; READ(p); break;
             case 'u':
-                tmp = parse_unicode_escape_sequence(p);
-                if (tmp == -1)
+                ret = parse_unicode_escape_sequence(p);
+                if (ret == -1)
                     return JSEAN_INVALID_UNICODE_ESCAPE_SEQUENCE;
                 break;
+
             default:
                 return JSEAN_INVALID_ESCAPE_SEQUENCE;
             }
-            if (!strbuf_add_codepoint(&p->buf, tmp))
+
+            if (!strbuf_add_codepoint(&p->buf, ret))
                 return JSEAN_OUT_OF_MEMORY;
             break;
 
         // Non-ASCII characters
         default:
-            tmp = parse_utf8_sequence(p);
-            if (tmp != JSEAN_SUCCESS)
-                return tmp;
+            ret = parse_utf8_sequence(p);
+            if (ret != JSEAN_SUCCESS)
+                return ret;
+
             break;
         }
     }

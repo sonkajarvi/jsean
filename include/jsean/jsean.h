@@ -12,56 +12,93 @@
 #include <stdio.h>
 #include <string.h>
 
-#define __JSEAN_STATUS_LIST(X)                                                  \
-    X(JSEAN_SUCCESS, "success")                                                 \
-    X(JSEAN_CONVERSION_FAILED, "number conversion failed")                      \
-    X(JSEAN_EXPECTED_COMMA, "expected ','")                                     \
-    X(JSEAN_EXPECTED_DIGIT, "expected digit")                                   \
-    X(JSEAN_EXPECTED_FALSE, "expected 'false'")                                 \
-    X(JSEAN_EXPECTED_MINUS_NONZERO_DIGIT, "expected '-' or non-zero digit")     \
-    X(JSEAN_EXPECTED_NONZERO_DIGIT, "expected non-zero digit")                  \
-    X(JSEAN_EXPECTED_NULL, "expected 'null'")                                   \
-    X(JSEAN_EXPECTED_QUOTATION_MARK, "expected '\"'")                           \
-    X(JSEAN_EXPECTED_TRUE, "expected 'true'")                                   \
-    X(JSEAN_EXPECTED_WHITESPACE, "unexpected non-whitespace character")         \
-    X(JSEAN_INVALID_ARGUMENTS, "invalid arguments")                             \
-    X(JSEAN_INVALID_ESCAPE_SEQUENCE, "invalid escape sequence")                 \
-    X(JSEAN_INVALID_UNICODE_ESCAPE_SEQUENCE, "invalid Unicode escape sequence") \
-    X(JSEAN_INVALID_UTF8_SEQUENCE, "invalid UTF-8 sequence")                    \
-    X(JSEAN_OUT_OF_MEMORY, "out of memory")                                     \
-    X(JSEAN_EXPECTED_VALUE, "expected 'false', 'null', 'true', '{', '[', '-', '\"' or digit")
+// Create a temporary JSON string from a string literal, for keys, etc.
+#define JSEAN_S(c_str)                                                   \
+    ((jsean[]){                                                          \
+        {                                                                \
+            .s_val = ({                                                  \
+                _Static_assert(                                          \
+                    __builtin_types_compatible_p(typeof(c_str), char[]), \
+                    "argument must be a string literal");                \
+                (c_str);                                                 \
+            }),                                                          \
+            .s_len = sizeof(c_str) - 1,                                  \
+            .s_free_fn = NULL,                                           \
+            .type = JSEAN_TYPE_STRING,                                   \
+        }                                                                \
+    })
+
+#define __JSEAN_TYPE_LIST(X)         \
+    X(JSEAN_TYPE_NULL, "null")       \
+    X(JSEAN_TYPE_BOOLEAN, "boolean") \
+    X(JSEAN_TYPE_OBJECT, "object")   \
+    X(JSEAN_TYPE_ARRAY, "array")     \
+    X(JSEAN_TYPE_NUMBER, "number")   \
+    X(JSEAN_TYPE_STRING, "string")
+
+#define __JSEAN_STATUS_LIST(X)                                                                \
+    X(JSEAN_SUCCESS, "success")                                                               \
+    X(JSEAN_CONVERSION_FAILED, "number conversion failed")                                    \
+    X(JSEAN_EXPECTED_COMMA, "expected ','")                                                   \
+    X(JSEAN_EXPECTED_DIGIT, "expected digit")                                                 \
+    X(JSEAN_EXPECTED_FALSE, "expected 'false'")                                               \
+    X(JSEAN_EXPECTED_MINUS_NONZERO_DIGIT, "expected '-' or non-zero digit")                   \
+    X(JSEAN_EXPECTED_NONZERO_DIGIT, "expected non-zero digit")                                \
+    X(JSEAN_EXPECTED_NULL, "expected 'null'")                                                 \
+    X(JSEAN_EXPECTED_QUOTATION_MARK, "expected '\"'")                                         \
+    X(JSEAN_EXPECTED_TRUE, "expected 'true'")                                                 \
+    X(JSEAN_EXPECTED_VALUE, "expected 'false', 'null', 'true', '{', '[', '-', '\"' or digit") \
+    X(JSEAN_EXPECTED_WHITESPACE, "unexpected non-whitespace character")                       \
+    X(JSEAN_INVALID_ARGUMENTS, "invalid arguments")                                           \
+    X(JSEAN_INVALID_ESCAPE_SEQUENCE, "invalid escape sequence")                               \
+    X(JSEAN_INVALID_UNICODE_ESCAPE_SEQUENCE, "invalid Unicode escape sequence")               \
+    X(JSEAN_INVALID_UTF8_SEQUENCE, "invalid UTF-8 sequence")                                  \
+    X(JSEAN_OUT_OF_MEMORY, "out of memory")
 
 enum jsean_type {
-    JSEAN_UNKNOWN,
-    JSEAN_TYPE_NULL,
-    JSEAN_TYPE_BOOLEAN,
-    JSEAN_TYPE_OBJECT,
-    JSEAN_TYPE_ARRAY,
-    JSEAN_TYPE_NUMBER,
-    JSEAN_TYPE_STRING,
+#define X(type_, str_) type_,
+    __JSEAN_TYPE_LIST(X)
+#undef X
 
-    __JSEAN_TYPE_COUNT
+    __JSEAN_TYPE_COUNT,
+
+    JSEAN_TYPE_UNKNOWN,
 };
 
 enum jsean_status {
-#define X(status_, string_) status_,
+#define X(status_, str_) status_,
     __JSEAN_STATUS_LIST(X)
 #undef X
 
-    __JSEAN_STATUS_COUNT
+    __JSEAN_STATUS_COUNT,
 };
 
 typedef struct {
-    unsigned int type;
     union {
-        bool boolean;
-        double number;
-        void *pointer;
+        // Bool
+        bool b_val;
+
+        // Array, object
+        void *ao_ptr;
+
+        // Number
+        double n_val;
+
+        // String
+        struct {
+            char *s_val;
+            unsigned int s_len;
+            void (*s_free_fn)(void *);
+        };
     };
+    unsigned int type;
 } jsean;
 
 // Get the type of a JSON value
-unsigned int jsean_typeof(const jsean *json);
+unsigned int jsean_get_type(const jsean *json);
+
+const char *jsean_type_to_str(unsigned int type);
+const char *jsean_status_to_str(int status);
 
 // Free a JSON value
 void jsean_free(jsean *json);
@@ -77,61 +114,23 @@ static inline int jsean_reads(jsean *json, const char *str)
 
 char *jsean_write(const jsean *json, size_t *len, const char *indent);
 
-const char *jsean_status_to_string(int status);
+bool jsean_set_null(jsean *json);
 
+bool jsean_set_bool(jsean *json, bool b);
+bool jsean_get_bool(const jsean *json);
 
-bool jsean_set_null(jsean *self);
+// Lazily allocated
+bool jsean_set_obj(jsean *json);
+size_t jsean_obj_len(const jsean *json);
+jsean *jsean_obj_at(const jsean *json, const jsean *key);
 
-bool jsean_set_bool(jsean *self, bool b);
-bool jsean_get_bool(const jsean *self);
+// Does not copy the value or the key. The key must be unique.
+jsean *jsean_obj_add(jsean *json, jsean *key, jsean *val);
 
-
-// JSON object
-// -----------
-
-void jsean_object_print(jsean *json);
-
-// jsean_set_object - Set a JSON value to an object.
-// @json: A pointer to the JSON value.
-//
-void jsean_set_object(jsean *json);
-
-// jsean_object_count - Get the number of elements in an object.
-// @json: A pointer to the JSON object.
-//
-size_t jsean_object_count(const jsean *json);
-
-// jsean_object_get - Get a value from an object.
-// @json: A pointer to the JSON object.
-// @key: The key to use.
-//
-jsean *jsean_object_get(const jsean *json, const char *key);
-
-// jsean_object_insert - Insert a value to an object.
-// @json: A pointer to the JSON object.
-// @key: The key to use.
-// @val: The JSON value to insert.
-//
-// If the key already exists, then no values are inserted and NULL is returned.
-// Use jsean_object_replace for overwriting values.
-//
-jsean *jsean_object_insert(jsean *json, const char *key, jsean *val);
-
-// jsean_object_replace - Replace a value in an object.
-// @json: A pointer to the JSON object.
-// @key: The key to use.
-// @val: The JSON value to insert.
-//
-jsean *jsean_object_replace(jsean *json, const char *key, jsean *val);
-
-// jsean_object_remove - Remove a value from an object.
-// @json: A pointer to the JSON object.
-// @key. The key to remove.
-//
-void jsean_object_remove(jsean *json, const char *key);
-
-// jsean_object_clear - Remove all elements from an object.
-// @json: A pointer to the JSON object.
+// Does not copy the value or the key. The key may already be in use. If the
+// provided key is used, it is set to null.
+jsean *jsean_obj_set(jsean *json, jsean *key, jsean *val);
+void jsean_obj_del(jsean *json, const jsean *key);
 void jsean_object_clear(jsean *json);
 
 
@@ -198,40 +197,14 @@ static inline void jsean_array_pop(jsean *json, jsean *out)
 //
 void jsean_array_clear(jsean *json);
 
+// Number cannot be Infinity or NaN.
+bool jsean_set_num(jsean *json, double num);
+double jsean_get_num(const jsean *json);
 
-// JSON number
-// -----------
-
-// jsean_set_number - Set a JSON value to a number.
-// @json: A pointer to the JSON value.
-// @num: The number to use.
-//
-// Because JSON does not permit values like NaN or Infinity, the value is set
-// to null instead. This works similarly to JavaScript's JSON.stringify().
-// Note: See ECMA-262, section 25.5.2.2.
-//
-void jsean_set_number(jsean *json, double num);
-
-// jsean_get_number - Get a number from a JSON value.
-// @json: A pointer to the JSON number.
-//
-// Returns zero on failure.
-//
-double jsean_get_number(const jsean *json);
-
-
-// JSON string
-// -----------
-
-// jsean_set_string - Set a JSON value to a string.
-// @json: A pointer to the JSON value.
-// @str: The string to use.
-//
-void jsean_set_string(jsean *json, const char *str);
-
-// jsean_get_string - Get a string from a JSON value.
-// @json: A pointer to the JSON value.
-//
-const char *jsean_get_string(jsean *json);
+// String must be null-terminated if length is zero. The freeing function may
+// be NULL if the string doesn't need to be freed.
+bool jsean_set_str(jsean *json, char *str, size_t len, void (*free_fn)(void *));
+const char *jsean_get_str(const jsean *json);
+size_t jsean_str_len(const jsean *json);
 
 #endif // JSEAN_JSEAN_H

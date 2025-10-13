@@ -58,7 +58,7 @@ TEST(jsean_array_insert)
     jsean a, b;
 
     // Null
-    jsean_set_number(&b, 1.0);
+    jsean_set_num(&b, 1.0);
     ASSERT(jsean_array_insert(NULL, 0, &b) == NULL);
 
     // Null
@@ -73,13 +73,13 @@ TEST(jsean_array_insert)
 
     // Success
     ASSERT(jsean_array_insert(&a, 0, &b) != NULL);
-    ASSERT(jsean_get_number(jsean_array_at(&a, 0)) == 1.0);
+    ASSERT(jsean_get_num(jsean_array_at(&a, 0)) == 1.0);
 
     // Success
-    jsean_set_number(&b, 2.0);
+    jsean_set_num(&b, 2.0);
     ASSERT(jsean_array_insert(&a, 0, &b) != NULL);
-    ASSERT(jsean_get_number(jsean_array_at(&a, 0)) == 2.0);
-    ASSERT(jsean_get_number(jsean_array_at(&a, 1)) == 1.0);
+    ASSERT(jsean_get_num(jsean_array_at(&a, 0)) == 2.0);
+    ASSERT(jsean_get_num(jsean_array_at(&a, 1)) == 1.0);
 
     jsean_free(&a);
 }
@@ -111,34 +111,34 @@ TEST(jsean_array_remove)
 
     // Out of bounds
     jsean_set_array(&a);
-    jsean_set_number(&b, 1.0);
+    jsean_set_num(&b, 1.0);
     jsean_array_push(&a, &b);
     ASSERT(jsean_array_length(&a) == 1);
     jsean_array_remove(&a, 1, NULL);
     ASSERT(jsean_array_length(&a) == 1);
 
     // Success
-    jsean_set_number(&b, 2.0);
+    jsean_set_num(&b, 2.0);
     jsean_array_push(&a, &b);
     ASSERT(jsean_array_length(&a) == 2);
-    ASSERT(jsean_get_number(jsean_array_at(&a, 0)) == 1.0);
-    ASSERT(jsean_get_number(jsean_array_at(&a, 1)) == 2.0);
+    ASSERT(jsean_get_num(jsean_array_at(&a, 0)) == 1.0);
+    ASSERT(jsean_get_num(jsean_array_at(&a, 1)) == 2.0);
 
     jsean_array_remove(&a, 0, NULL);
     ASSERT(jsean_array_length(&a) == 1);
-    ASSERT(jsean_get_number(jsean_array_at(&a, 0)) == 2.0);
+    ASSERT(jsean_get_num(jsean_array_at(&a, 0)) == 2.0);
 
     jsean_array_remove(&a, 0, NULL);
     ASSERT(jsean_array_length(&a) == 0);
 
     // Success
-    jsean_set_number(&b, 64.0);
+    jsean_set_num(&b, 64.0);
     jsean_array_push(&a, &b);
     jsean_set_null(&b);
-    ASSERT(jsean_typeof(&b) != JSEAN_TYPE_NUMBER);
+    ASSERT(jsean_get_type(&b) != JSEAN_TYPE_NUMBER);
     jsean_array_remove(&a, 0, &b);
-    ASSERT(jsean_typeof(&b) == JSEAN_TYPE_NUMBER);
-    ASSERT(jsean_get_number(&b) == 64.0);
+    ASSERT(jsean_get_type(&b) == JSEAN_TYPE_NUMBER);
+    ASSERT(jsean_get_num(&b) == 64.0);
 
     jsean_free(&a);
 }
@@ -160,14 +160,14 @@ TEST(jsean_array_pop)
     ASSERT(jsean_array_length(&a) == 0);
 
     // Success
-    jsean_set_number(&b, 64.0);
+    jsean_set_num(&b, 64.0);
     jsean_array_push(&a, &b);
     jsean_set_null(&b);
-    ASSERT(jsean_typeof(&b) != JSEAN_TYPE_NUMBER);
+    ASSERT(jsean_get_type(&b) != JSEAN_TYPE_NUMBER);
 
     jsean_array_pop(&a, &b);
-    ASSERT(jsean_typeof(&b) == JSEAN_TYPE_NUMBER);
-    ASSERT(jsean_get_number(&b) == 64.0);
+    ASSERT(jsean_get_type(&b) == JSEAN_TYPE_NUMBER);
+    ASSERT(jsean_get_num(&b) == 64.0);
 
     jsean_free(&a);
 }

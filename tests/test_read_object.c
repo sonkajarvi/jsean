@@ -12,8 +12,8 @@ TEST(jsean_read_object_empty)
     jsean a;
 
     ASSERT(jsean_reads(&a, "{}") == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_OBJECT);
-    ASSERT(jsean_object_count(&a) == 0);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_OBJECT);
+    ASSERT(jsean_obj_len(&a) == 0);
 
     jsean_free(&a);
 }
@@ -23,9 +23,9 @@ TEST(jsean_read_object_strings)
     jsean a;
 
     ASSERT(jsean_reads(&a, "{\"a\": \"hello\", \"b\": \"world\"}") == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_OBJECT);
-    ASSERT(jsean_object_count(&a) == 2);
-    ASSERT(jsean_typeof(jsean_object_get(&a, "a")) == JSEAN_TYPE_STRING);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_OBJECT);
+    ASSERT(jsean_obj_len(&a) == 2);
+    ASSERT(jsean_get_type(jsean_obj_at(&a, JSEAN_S("a"))) == JSEAN_TYPE_STRING);
 
     jsean_free(&a);
 }
@@ -35,8 +35,8 @@ TEST(jsean_read_object_whitespace)
     jsean a;
 
     ASSERT(jsean_reads(&a, "{\n\t\"a\": 1,\n\t\"b\": 2,\n\t\"c\": 3\n}") == JSEAN_SUCCESS);
-    ASSERT(jsean_typeof(&a) == JSEAN_TYPE_OBJECT);
-    ASSERT(jsean_object_count(&a) == 3);
+    ASSERT(jsean_get_type(&a) == JSEAN_TYPE_OBJECT);
+    ASSERT(jsean_obj_len(&a) == 3);
 
     jsean_free(&a);
 }
