@@ -14,6 +14,8 @@
 #define STRING_LENGTH_MAX           4294967294 // 2^32-1
 #define STRING_HASH_UNDEFINED       0
 
+#define ARRAY_DEFAULT_CAPACITY      8
+
 #define OBJECT_DEFAULT_CAPACITY     16
 #define OBJECT_LOAD_FACTOR_MAX      0.67
 
@@ -35,8 +37,14 @@ enum internal_type {
     INTERNAL_TYPE_UNKNOWN,
 };
 
+struct arr {
+    jsean *ptr;
+    unsigned int cap;
+    unsigned int len;
+};
+
 struct obj {
-    struct obj_pair *pairs;
+    struct obj_pair *ptr;
     unsigned int cap;
     unsigned int len;
     unsigned int dead;
@@ -77,7 +85,7 @@ static inline void strbuf_clear(struct strbuf *buf)
 }
 
 void obj_free(jsean *json);
-void free_array(jsean *json);
+void arr_free(jsean *json);
 
 bool str_cmp(const jsean *json, const jsean *other);
 size_t str_hash(const jsean *json);

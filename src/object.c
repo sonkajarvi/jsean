@@ -35,7 +35,7 @@ static struct obj *obj_init(void)
     if (!ptr)
         return NULL;
 
-    obj->pairs = ptr;
+    obj->ptr = ptr;
 
     for (end = ptr + obj->cap; ptr != end; ptr++)
         ptr->key.type = INTERNAL_TYPE_EMPTY;
@@ -48,14 +48,14 @@ static void obj_rehash(struct obj *obj, size_t old_cap)
     struct obj_pair *ptr, *end;
     size_t index;
 
-    for (ptr = obj->pairs; obj->dead > 0; ptr++) {
+    for (ptr = obj->ptr; obj->dead > 0; ptr++) {
         if (get_internal_type(&ptr->key) == INTERNAL_TYPE_DEAD) {
             ptr->key.type = INTERNAL_TYPE_EMPTY;
             obj->dead--;
         }
     }
 
-    for (ptr = obj->pairs, end = ptr + old_cap; ptr != end; ptr++) {
+    for (ptr = obj->ptr, end = ptr + old_cap; ptr != end; ptr++) {
         if (get_internal_type(&ptr->key) == INTERNAL_TYPE_EMPTY)
             continue;
 
@@ -67,7 +67,7 @@ static void obj_rehash(struct obj *obj, size_t old_cap)
                 index = 0;
         }
 
-        memcpy(&obj->pairs[index], ptr, sizeof(*ptr));
+        memcpy(&obj->ptr[index], ptr, sizeof(*ptr));
         ptr->key.type = INTERNAL_TYPE_EMPTY;
     }
 }
@@ -110,12 +110,12 @@ jsean *jsean_obj_at(const jsean *json, const jsean *key)
     if (!obj)
         return NULL;
 
-    ptr = obj->pairs + (str_hash(key) % obj->cap);
+    ptr = obj->ptr + (str_hash(key) % obj->cap);
     end = ptr + obj->cap;
 
     for (;; ptr++) {
         if (ptr == end)
-            ptr = obj->pairs;
+            ptr = obj->ptr;
 
         if (get_internal_type(&ptr->key) == INTERNAL_TYPE_EMPTY)
             return NULL;
@@ -153,7 +153,7 @@ jsean *jsean_obj_add(jsean *json, jsean *key, jsean *val)
     if (get_load_factor(obj) > OBJECT_LOAD_FACTOR_MAX) {
         old_cap = obj->cap;
 
-        ptr = realloc(obj->pairs, sizeof(*ptr) * next_capacity(old_cap));
+        ptr = realloc(obj->ptr, sizeof(*ptr) * next_capacity(old_cap));
         if (!ptr)
             return NULL;
 
@@ -162,16 +162,16 @@ jsean *jsean_obj_add(jsean *json, jsean *key, jsean *val)
         for (end = ptr + obj->cap; ptr != end; ptr++)
             ptr->key.type = INTERNAL_TYPE_EMPTY;
 
-        obj->pairs = ptr;
+        obj->ptr = ptr;
         obj_rehash(obj, old_cap);
     }
 
-    ptr = obj->pairs + (str_hash(key) % obj->cap);
+    ptr = obj->ptr + (str_hash(key) % obj->cap);
     end = ptr + obj->cap;
 
     for (;; ptr++) {
         if (ptr == end)
-            ptr = obj->pairs;
+            ptr = obj->ptr;
 
         if (get_internal_type(&ptr->key) == INTERNAL_TYPE_EMPTY)
             break;
@@ -192,7 +192,7 @@ jsean *jsean_obj_add(jsean *json, jsean *key, jsean *val)
 
 jsean *jsean_obj_set(jsean *json, jsean *key, jsean *val)
 {
-    jsean *tmp;
+    jsean *ptr;
 
     if (jsean_get_type(json) != JSEAN_TYPE_OBJECT)
         return NULL;
@@ -206,16 +206,21 @@ jsean *jsean_obj_set(jsean *json, jsean *key, jsean *val)
     if (!json->ao_ptr && (json->ao_ptr = obj_init()) == NULL)
         return NULL;
 
-    tmp = jsean_obj_at(json, key);
-    if (!tmp)
-        return jsean_obj_add(json, key, val);
+    ptr = jsean_obj_at(json, key);
+    if (!ptr) {
+        ptr = jsean_obj_add(json, key, val);
+        if (ptr)
+            jsean_set_null(key);
 
-    jsean_free(tmp);
-    memcpy(tmp, val, sizeof(*val));
+        return ptr;
+    }
+
+    jsean_free(ptr);
+    memcpy(ptr, val, sizeof(*val));
 
     jsean_set_null(key);
 
-    return tmp;
+    return ptr;
 }
 
 void jsean_obj_del(jsean *json, const jsean *key)
@@ -233,12 +238,12 @@ void jsean_obj_del(jsean *json, const jsean *key)
     if (!obj || obj->len == 0)
         return;
 
-    ptr = obj->pairs + (str_hash(key) % obj->cap);
+    ptr = obj->ptr + (str_hash(key) % obj->cap);
     end = ptr + obj->cap;
 
     for (;; ptr++) {
         if (ptr == end)
-            ptr = obj->pairs;
+            ptr = obj->ptr;
 
         if (get_internal_type(&ptr->key) == INTERNAL_TYPE_EMPTY)
             break;
@@ -270,7 +275,7 @@ void jsean_object_clear(jsean *json)
     if (!obj || obj->len == 0)
         return;
 
-    for (ptr = obj->pairs, end = ptr + obj->cap; ptr != end; ptr++) {
+    for (ptr = obj->ptr, end = ptr + obj->cap; ptr != end; ptr++) {
         if (get_internal_type(&ptr->key) == INTERNAL_TYPE_EMPTY)
             continue;
         else if (get_internal_type(&ptr->key) == INTERNAL_TYPE_DEAD)
@@ -296,6 +301,6 @@ void obj_free(jsean *json)
 
     jsean_object_clear(json);
 
-    free(obj->pairs);
+    free(obj->ptr);
     free(obj);
 }

@@ -65,7 +65,7 @@ void jsean_free(jsean *json)
         break;
 
     case JSEAN_TYPE_ARRAY:
-        free_array(json);
+        arr_free(json);
         break;
 
     case JSEAN_TYPE_STRING:

@@ -203,7 +203,7 @@ static int parse_array(struct parser *p, jsean *json)
     jsean value;
     int ret;
 
-    jsean_set_array(json);
+    jsean_set_arr(json);
 
     READ(p);
 
@@ -211,14 +211,14 @@ static int parse_array(struct parser *p, jsean *json)
     if (PEEK(p) == ']')
         goto end;
 
-#define PARSE_VALUE_HELPER()               \
-    ret = parse_value(p, &value);          \
-    if (ret != JSEAN_SUCCESS)              \
-        goto err;                          \
-                                           \
-    if (!jsean_array_push(json, &value)) { \
-        ret = JSEAN_OUT_OF_MEMORY;         \
-        goto err_value;                    \
+#define PARSE_VALUE_HELPER()             \
+    ret = parse_value(p, &value);        \
+    if (ret != JSEAN_SUCCESS)            \
+        goto err;                        \
+                                         \
+    if (!jsean_arr_push(json, &value)) { \
+        ret = JSEAN_OUT_OF_MEMORY;       \
+        goto err_value;                  \
     }
 
     PARSE_VALUE_HELPER();

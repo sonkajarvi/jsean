@@ -99,7 +99,7 @@ TEST(jsean_obj_add)
 
 TEST(jsean_obj_set)
 {
-    jsean a, b;
+    jsean a, b, c;
 
     // Null
     jsean_set_num(&b, 32.0);
@@ -116,7 +116,9 @@ TEST(jsean_obj_set)
     ASSERT(jsean_obj_set(&b, JSEAN_S("a"), &a) == NULL);
 
     // Ok
-    ASSERT(jsean_obj_set(&a, JSEAN_S("a"), &b) != NULL);
+    ASSERT(jsean_set_str(&c, "a", 1, NULL));
+    ASSERT(jsean_obj_set(&a, &c, &b) != NULL);
+    ASSERT(jsean_get_type(&c) == JSEAN_TYPE_NULL);
     ASSERT(jsean_get_type(jsean_obj_at(&a, JSEAN_S("a"))) == JSEAN_TYPE_NUMBER);
     ASSERT(jsean_get_num(jsean_obj_at(&a, JSEAN_S("a"))) == 32.0);
 

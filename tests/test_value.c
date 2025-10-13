@@ -31,7 +31,7 @@ TEST(jsean_get_type)
     ASSERT(jsean_get_type(&a) == JSEAN_TYPE_OBJECT);
     jsean_free(&a);
 
-    jsean_set_array(&a);
+    jsean_set_arr(&a);
     ASSERT(jsean_get_type(&a) == JSEAN_TYPE_ARRAY);
     jsean_free(&a);
 

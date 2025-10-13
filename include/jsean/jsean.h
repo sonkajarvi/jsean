@@ -133,69 +133,30 @@ jsean *jsean_obj_set(jsean *json, jsean *key, jsean *val);
 void jsean_obj_del(jsean *json, const jsean *key);
 void jsean_object_clear(jsean *json);
 
+// Lazily allocated
+bool jsean_set_arr(jsean *json);
+size_t jsean_arr_len(const jsean *json);
+jsean *jsean_arr_at(const jsean *json, const size_t index);
 
-// JSON array
-// ----------
+// Does not copy the value. Shifts values to make space for the new value. If
+// the index is the element after last, the value is appended.
+jsean *jsean_arr_add(jsean *json, const size_t index, const jsean *val);
 
-// jsean_set_array - Set a JSON value to an array.
-// @json: A pointer to the JSON value.
-//
-// Arrays are lazy-initialized, meaning that they do not allocate memory
-// before JSEAN_ArrayInsert() is called.
-//
-void jsean_set_array(jsean *json);
-
-// jsean_array_length - Get the length of an array.
-// @json: A pointer to the JSON value.
-//
-size_t jsean_array_length(const jsean *json);
-
-// jsean_array_at - Get a JSON value from an array at the given index.
-// @json: A pointer to the JSON array.
-// @index: The index to use.
-//
-// Checks for out of bounds indices.
-//
-jsean *jsean_array_at(const jsean *json, const size_t index);
-
-// jsean_array_insert - Insert a value to a JSON array.
-// @json: A pointer to the JSON array.
-// @index: The index to use.
-// @val: The value to insert.
-//
-jsean *jsean_array_insert(jsean *json, const size_t index, const jsean *val);
-
-// jsean_array_push - Push a value to a JSON array.
-// @json: A pointer to the JSON array.
-// @val: The value to push.
-//
-static inline jsean *jsean_array_push(jsean *json, const jsean *val)
+// Does not copy the value. The value at the given index is overwritten. If the
+// index is the element after last (i.e. length), the value is appended.
+jsean *jsean_arr_set(jsean *json, const size_t index, const jsean *val);
+static inline jsean *jsean_arr_push(jsean *json, const jsean *val)
 {
-    return jsean_array_insert(json, jsean_array_length(json), val);
+    return jsean_arr_add(json, jsean_arr_len(json), val);
 }
 
-// jsean_array_remove - Remove a value from a JSON array at the given index.
-// @json: A pointer to the JSON array.
-// @index: The index to use.
-// @out: A pointer to an optional output value. If left null, the popped
-//         value is also freed.
-//
-void jsean_array_remove(jsean *json, const size_t index, jsean *out);
-
-// jsean_array_pop - Remove the last element from a JSON array.
-// @json: A pointer to the JSON array.
-// @out: A pointer to an optional output value. If left null, the popped
-//         value is also freed.
-//
-static inline void jsean_array_pop(jsean *json, jsean *out)
+void jsean_arr_del(jsean *json, const size_t index, jsean *out);
+static inline void jsean_arr_pop(jsean *json, jsean *out)
 {
-    jsean_array_remove(json, jsean_array_length(json) - 1, out);
+    jsean_arr_del(json, jsean_arr_len(json) - 1, out);
 }
 
-// jsean_array_clear - Clear the contents of a JSON array.
-// @json: A pointer to the JSON array.
-//
-void jsean_array_clear(jsean *json);
+void jsean_arr_clear(jsean *json);
 
 // Number cannot be Infinity or NaN.
 bool jsean_set_num(jsean *json, double num);
