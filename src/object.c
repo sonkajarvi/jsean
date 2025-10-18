@@ -263,7 +263,7 @@ void jsean_obj_del(jsean *json, const jsean *key)
     }
 }
 
-void jsean_object_clear(jsean *json)
+void jsean_obj_clear(jsean *json)
 {
     struct obj *obj;
     struct obj_pair *ptr, *end;
@@ -299,7 +299,7 @@ void obj_free(jsean *json)
     if (!obj)
         return;
 
-    jsean_object_clear(json);
+    jsean_obj_clear(json);
 
     free(obj->ptr);
     free(obj);

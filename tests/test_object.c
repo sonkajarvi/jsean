@@ -138,7 +138,7 @@ TEST(jsean_object, clear)
     ASSERT(jsean_obj_add(&a, JSEAN_S("c"), &b) != NULL);
     ASSERT(jsean_obj_len(&a) == 3);
 
-    jsean_object_clear(&a);
+    jsean_obj_clear(&a);
     ASSERT(jsean_obj_len(&a) == 0);
 
     jsean_free(&a);

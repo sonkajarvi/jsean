@@ -131,7 +131,7 @@ jsean *jsean_obj_add(jsean *json, jsean *key, jsean *val);
 // provided key is used, it is set to null.
 jsean *jsean_obj_set(jsean *json, jsean *key, jsean *val);
 void jsean_obj_del(jsean *json, const jsean *key);
-void jsean_object_clear(jsean *json);
+void jsean_obj_clear(jsean *json);
 
 // Lazily allocated
 bool jsean_set_arr(jsean *json);
