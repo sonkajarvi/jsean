@@ -134,36 +134,30 @@ TEST(jsean_array, del)
 {
     jsean a, b;
 
+    jsean_arr_del(NULL, 0);
+
     jsean_set_arr(&a);
+    jsean_arr_del(&a, 0);
+
     jsean_set_num(&b, 1.0);
     jsean_arr_push(&a, &b);
     ASSERT(jsean_arr_len(&a) == 1);
-    jsean_arr_del(&a, 1, NULL);
+    jsean_arr_del(&a, 1);
     ASSERT(jsean_arr_len(&a) == 1);
 
+    jsean_free(&b);
     jsean_set_num(&b, 2.0);
     jsean_arr_push(&a, &b);
     ASSERT(jsean_arr_len(&a) == 2);
     ASSERT(jsean_get_num(jsean_arr_at(&a, 0)) == 1.0);
     ASSERT(jsean_get_num(jsean_arr_at(&a, 1)) == 2.0);
 
-    jsean_arr_del(&a, 0, NULL);
+    jsean_arr_del(&a, 0);
     ASSERT(jsean_arr_len(&a) == 1);
     ASSERT(jsean_get_num(jsean_arr_at(&a, 0)) == 2.0);
 
-    jsean_arr_del(&a, 0, NULL);
+    jsean_arr_del(&a, 0);
     ASSERT(jsean_arr_len(&a) == 0);
-
-    jsean_free(&b);
-    jsean_set_num(&b, 64.0);
-    jsean_arr_push(&a, &b);
-
-    jsean_free(&b);
-    jsean_set_null(&b);
-    ASSERT(jsean_get_type(&b) != JSEAN_TYPE_NUMBER);
-    jsean_arr_del(&a, 0, &b);
-    ASSERT(jsean_get_type(&b) == JSEAN_TYPE_NUMBER);
-    ASSERT(jsean_get_num(&b) == 64.0);
 
     jsean_free(&a);
     jsean_free(&b);
@@ -174,26 +168,14 @@ TEST(jsean_array, pop)
     jsean a, b;
 
     jsean_set_arr(&a);
-    jsean_arr_pop(&a, NULL);
+    jsean_arr_pop(&a);
     ASSERT(jsean_arr_len(&a) == 0);
 
     jsean_set_null(&b);
     jsean_arr_push(&a, &b);
     ASSERT(jsean_arr_len(&a) == 1);
-    jsean_arr_pop(&a, NULL);
+    jsean_arr_pop(&a);
     ASSERT(jsean_arr_len(&a) == 0);
-
-    jsean_free(&b);
-    jsean_set_num(&b, 64.0);
-    jsean_arr_push(&a, &b);
-
-    jsean_free(&b);
-    jsean_set_null(&b);
-    ASSERT(jsean_get_type(&b) != JSEAN_TYPE_NUMBER);
-
-    jsean_arr_pop(&a, &b);
-    ASSERT(jsean_get_type(&b) == JSEAN_TYPE_NUMBER);
-    ASSERT(jsean_get_num(&b) == 64.0);
 
     jsean_free(&a);
     jsean_free(&b);

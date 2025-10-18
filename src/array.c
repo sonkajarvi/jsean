@@ -137,7 +137,7 @@ jsean *jsean_arr_add(jsean *json, const size_t index, const jsean *val)
     return &arr->ptr[index];
 }
 
-void jsean_arr_del(jsean *json, const size_t index, jsean *out)
+void jsean_arr_del(jsean *json, const size_t index)
 {
     struct arr *arr;
     size_t len;
@@ -154,11 +154,7 @@ void jsean_arr_del(jsean *json, const size_t index, jsean *out)
         memmove(&arr->ptr[index], &arr->ptr[index + 1], len);
     }
 
-    if (out)
-        memcpy(out, &arr->ptr[index], sizeof(*out));
-    else
-        jsean_free(&arr->ptr[index]);
-
+    jsean_free(&arr->ptr[index]);
     arr->len--;
 }
 

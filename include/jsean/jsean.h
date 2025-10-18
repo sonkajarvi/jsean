@@ -150,10 +150,10 @@ static inline jsean *jsean_arr_push(jsean *json, const jsean *val)
     return jsean_arr_add(json, jsean_arr_len(json), val);
 }
 
-void jsean_arr_del(jsean *json, const size_t index, jsean *out);
-static inline void jsean_arr_pop(jsean *json, jsean *out)
+void jsean_arr_del(jsean *json, const size_t index);
+static inline void jsean_arr_pop(jsean *json)
 {
-    jsean_arr_del(json, jsean_arr_len(json) - 1, out);
+    jsean_arr_del(json, jsean_arr_len(json) - 1);
 }
 
 void jsean_arr_clear(jsean *json);
