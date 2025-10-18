@@ -9,7 +9,7 @@
 #include "jsean/jsean.h"
 #include "test.h"
 
-TEST(jsean_read_stream_64kb)
+TEST(jsean_read_stream, file_64kb)
 {
     FILE *fp;
     jsean a;
@@ -25,7 +25,7 @@ TEST(jsean_read_stream_64kb)
     jsean_free(&a);
 }
 
-TEST(jsean_read_stream_128kb)
+TEST(jsean_read_stream, file_128kb)
 {
     FILE *fp;
     jsean a;
@@ -41,7 +41,7 @@ TEST(jsean_read_stream_128kb)
     jsean_free(&a);
 }
 
-TEST(jsean_read_stream_256kb)
+TEST(jsean_read_stream, file_256kb)
 {
     FILE *fp;
     jsean a;
@@ -57,7 +57,7 @@ TEST(jsean_read_stream_256kb)
     jsean_free(&a);
 }
 
-TEST(jsean_read_stream_512kb)
+TEST(jsean_read_stream, file_512kb)
 {
     FILE *fp;
     jsean a;
@@ -73,7 +73,7 @@ TEST(jsean_read_stream_512kb)
     jsean_free(&a);
 }
 
-TEST(jsean_read_stream_1mb)
+TEST(jsean_read_stream, file_1mb)
 {
     FILE *fp;
     jsean a;
@@ -89,7 +89,7 @@ TEST(jsean_read_stream_1mb)
     jsean_free(&a);
 }
 
-TEST(jsean_read_stream_5mb)
+TEST(jsean_read_stream, file_5mb)
 {
     FILE *fp;
     jsean a;

@@ -7,7 +7,7 @@
 #include "jsean/jsean.h"
 #include "test.h"
 
-TEST(jsean_read_object_empty)
+TEST(jsean_read_object, empty)
 {
     jsean a;
 
@@ -18,7 +18,7 @@ TEST(jsean_read_object_empty)
     jsean_free(&a);
 }
 
-TEST(jsean_read_object_strings)
+TEST(jsean_read_object, strings)
 {
     jsean a;
 
@@ -30,7 +30,7 @@ TEST(jsean_read_object_strings)
     jsean_free(&a);
 }
 
-TEST(jsean_read_object_whitespace)
+TEST(jsean_read_object, whitespace)
 {
     jsean a;
 
@@ -41,21 +41,21 @@ TEST(jsean_read_object_whitespace)
     jsean_free(&a);
 }
 
-TEST(jsean_read_object_expected_comma)
+TEST(jsean_read_object, expected_comma)
 {
     jsean a;
 
     ASSERT(jsean_reads(&a, "{\"a\":1 \"b\":2}") == JSEAN_EXPECTED_COMMA);
 }
 
-TEST(jsean_read_object_expected_value)
+TEST(jsean_read_object, expected_value)
 {
     jsean a;
 
     ASSERT(jsean_reads(&a, "{\"a\":}") == JSEAN_EXPECTED_VALUE);
 }
 
-TEST(jsean_read_object_expected_quotation_mark)
+TEST(jsean_read_object, expected_quotation_mark)
 {
     jsean a;
 

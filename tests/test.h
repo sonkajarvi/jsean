@@ -9,20 +9,25 @@
 
 #include <stdio.h>
 
-#define TEST(name_)                                     \
-    void __TEST_CASE_NAME(name_)(struct test_result *); \
-    __attribute__((constructor(102)))                   \
-    void __TEST_WRAPPER_NAME(name_)(void)               \
-    {                                                   \
-        struct test_case tmp = {                        \
-            .func = __TEST_CASE_NAME(name_),            \
-            .name = #name_,                             \
-            .path = __FILE__,                           \
-            .file = __FILE_NAME__                       \
-        };                                              \
-        __test_run(&tmp);                               \
-    }                                                   \
-    void __TEST_CASE_NAME(name_)(struct test_result *__TEST_RESULT)
+#ifdef __linux__
+# include <time.h>
+#endif
+
+#define TEST(test_suite, test_name)                                     \
+    void __TEST_CASE_NAME(test_suite, test_name)(struct test_result *); \
+    __attribute__((constructor(102)))                                   \
+    void __TEST_WRAPPER_NAME(test_suite, test_name)(void)               \
+    {                                                                   \
+        struct test_case tmp = {                                        \
+            .func = __TEST_CASE_NAME(test_suite, test_name),            \
+            .suite = #test_suite,                                       \
+            .name = #test_name,                                         \
+            .path = __FILE__,                                           \
+            .file = __FILE_NAME__                                       \
+        };                                                              \
+        __test_run(&tmp);                                               \
+    }                                                                   \
+    void __TEST_CASE_NAME(test_suite, test_name)(struct test_result *__TEST_RESULT)
 
 #define ASSERT(expr_)                       \
     {                                       \
@@ -37,8 +42,8 @@
     }
 
 #define __TEST_RESULT __result
-#define __TEST_CASE_NAME(name) __test_case_##name
-#define __TEST_WRAPPER_NAME(name) __test_wrapper_##name
+#define __TEST_CASE_NAME(suite, name) __test_case_##suite##_##name
+#define __TEST_WRAPPER_NAME(suite, name) __test_wrapper_##suite##_##name
 
 struct test_result {
     const char *expr;
@@ -48,22 +53,47 @@ struct test_result {
 
 struct test_case {
     void (*func)(struct test_result *);
+    const char *suite;
     const char *name;
     const char *path;
     const char *file;
 };
 
+extern unsigned long __passed_tests;
+extern unsigned long __failed_tests;
+
 static inline void __test_run(struct test_case *test)
 {
-    struct test_result tmp;
+#ifdef __linux__
+    struct timespec start, end;
+#endif
+    struct test_result result;
+    unsigned long time;
 
-    test->func(&tmp);
+#ifdef __linux__
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+#endif
 
-    if (tmp.status == 0) {
-        printf("[ \033[1;92mPASS\033[0m ] %s\n", test->name);
+    test->func(&result);
+
+#ifdef __linux__
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+
+    time = (end.tv_sec - start.tv_sec) * 1000000000 + (end.tv_nsec - start.tv_nsec);
+#else
+    time = 0;
+#endif
+
+    if (result.status == 0) {
+        printf("\033[32m[  pass  ]\033[0m %s::%s (%lu ns)\n",
+            test->suite, test->name, time);
+
+        __passed_tests++;
     } else {
-        printf("[ \033[1;91mFAIL\033[0m ] %s\n  In file %s, line %u:\n    Assertion failed: '%s'\n",
-            test->name, test->path, tmp.line, tmp.expr);
+        printf("\033[31m[  fail  ]\033[0m %s::%s (%lu ns)\n  In file %s, line %u:\n    Assertion failed: '%s'\n",
+            test->suite, test->name, time, test->path, result.line, result.expr);
+
+        __failed_tests++;
     }
 }
 

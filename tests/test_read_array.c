@@ -7,7 +7,7 @@
 #include "jsean/jsean.h"
 #include "test.h"
 
-TEST(jsean_read_array_empty)
+TEST(jsean_read_array, empty)
 {
     jsean a;
 
@@ -18,7 +18,7 @@ TEST(jsean_read_array_empty)
     jsean_free(&a);
 }
 
-TEST(jsean_read_array_strings)
+TEST(jsean_read_array, strings)
 {
     jsean a;
 
@@ -31,7 +31,7 @@ TEST(jsean_read_array_strings)
     jsean_free(&a);
 }
 
-TEST(jsean_read_array_whitespace)
+TEST(jsean_read_array, whitespace)
 {
     jsean a;
 
@@ -42,14 +42,14 @@ TEST(jsean_read_array_whitespace)
     jsean_free(&a);
 }
 
-TEST(jsean_read_array_expected_comma)
+TEST(jsean_read_array, expected_comma)
 {
     jsean a;
 
     ASSERT(jsean_reads(&a, "[true false]") == JSEAN_EXPECTED_COMMA);
 }
 
-TEST(jsean_read_array_expected_value)
+TEST(jsean_read_array, expected_value)
 {
     jsean a;
 
