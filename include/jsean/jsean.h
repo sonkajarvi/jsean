@@ -104,13 +104,8 @@ const char *jsean_status_to_str(int status);
 void jsean_free(jsean *json);
 
 // Read and write JSON data
-int jsean_read(jsean *json, const char *bytes, const size_t len);
+int jsean_read(jsean *json, jsean *src);
 int jsean_read_stream(jsean *json, FILE *fp);
-
-static inline int jsean_reads(jsean *json, const char *str)
-{
-    return jsean_read(json, str, strlen(str));
-}
 
 char *jsean_write(const jsean *json, size_t *len, const char *indent);
 

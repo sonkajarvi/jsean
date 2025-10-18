@@ -585,19 +585,19 @@ static int parse_text(struct parser *p, jsean *json)
     return JSEAN_SUCCESS;
 }
 
-int jsean_read(jsean *json, const char *bytes, const size_t len)
+int jsean_read(jsean *json, jsean *src)
 {
     struct parser p;
     int ret;
 
-    if (!json || !bytes)
+    if (!json || jsean_get_type(src) != JSEAN_TYPE_STRING)
         return JSEAN_INVALID_ARGUMENTS;
 
     if (!strbuf_init(&p.buf))
         return JSEAN_OUT_OF_MEMORY;
 
-    p.ptr = bytes;
-    p.end = p.ptr + len;
+    p.ptr = jsean_get_str(src);
+    p.end = p.ptr + jsean_str_len(src);
     p.peek = peek_buffer;
     p.read = read_buffer;
 

@@ -11,7 +11,7 @@ TEST(jsean_read_array, empty)
 {
     jsean a;
 
-    ASSERT(jsean_reads(&a, "[]") == JSEAN_SUCCESS);
+    ASSERT(jsean_read(&a, JSEAN_S("[]")) == JSEAN_SUCCESS);
     ASSERT(jsean_get_type(&a) == JSEAN_TYPE_ARRAY);
     ASSERT(jsean_arr_len(&a) == 0);
 
@@ -22,7 +22,7 @@ TEST(jsean_read_array, strings)
 {
     jsean a;
 
-    ASSERT(jsean_reads(&a, "[\"hello\", \"world\"]") == JSEAN_SUCCESS);
+    ASSERT(jsean_read(&a, JSEAN_S("[\"hello\", \"world\"]")) == JSEAN_SUCCESS);
 
     ASSERT(jsean_get_type(&a) == JSEAN_TYPE_ARRAY);
     ASSERT(jsean_arr_len(&a) == 2);
@@ -35,7 +35,7 @@ TEST(jsean_read_array, whitespace)
 {
     jsean a;
 
-    ASSERT(jsean_reads(&a, "[\n\t123,\n\t456,\n\t789\n]") == JSEAN_SUCCESS);
+    ASSERT(jsean_read(&a, JSEAN_S("[\n\t123,\n\t456,\n\t789\n]")) == JSEAN_SUCCESS);
     ASSERT(jsean_get_type(&a) == JSEAN_TYPE_ARRAY);
     ASSERT(jsean_arr_len(&a) == 3);
 
@@ -46,12 +46,12 @@ TEST(jsean_read_array, expected_comma)
 {
     jsean a;
 
-    ASSERT(jsean_reads(&a, "[true false]") == JSEAN_EXPECTED_COMMA);
+    ASSERT(jsean_read(&a, JSEAN_S("[true false]")) == JSEAN_EXPECTED_COMMA);
 }
 
 TEST(jsean_read_array, expected_value)
 {
     jsean a;
 
-    ASSERT(jsean_reads(&a, "[true, ]") == JSEAN_EXPECTED_VALUE);
+    ASSERT(jsean_read(&a, JSEAN_S("[true, ]")) == JSEAN_EXPECTED_VALUE);
 }
