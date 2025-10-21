@@ -13,7 +13,7 @@
 
 #define LEN 64
 
-TEST(jsean_write, false)
+TEST(jsean_write_value, false)
 {
     jsean a;
     char *buf;
@@ -30,7 +30,7 @@ TEST(jsean_write, false)
     free(buf);
 }
 
-TEST(jsean_write, null)
+TEST(jsean_write_value, null)
 {
     jsean a;
     char *buf;
@@ -46,7 +46,7 @@ TEST(jsean_write, null)
     free(buf);
 }
 
-TEST(jsean_write, true)
+TEST(jsean_write_value, true)
 {
     jsean a;
     char *buf;

@@ -5,11 +5,24 @@
 //
 
 #include <stdbool.h>
+#include <string.h>
 
 #include "jsean/jsean.h"
 #include "internal.h"
 
-#define WRITE(w, b) ((w)->write((w), (b)))
+#define TRY_WRITE(writer, byte)                  \
+    do {                                         \
+        bool ret;                                \
+        ret = (writer)->write((writer), (byte)); \
+        if (!ret)                                \
+            return false;                        \
+    } while (0)
+
+#define TRY_WRITE_LITERAL(writer, str)           \
+    do {                                         \
+        for (size_t i = 0; i < strlen(str); i++) \
+            TRY_WRITE(writer, str[i]);           \
+    } while (0)
 
 struct writer {
     struct strbuf buf;
@@ -18,17 +31,62 @@ struct writer {
     bool (*write)(struct writer *, char);
 };
 
-static bool write_buffer(struct writer *wr, char byte)
+static bool __write_to_buf(struct writer *wr, char byte)
 {
     return strbuf_add_byte(&wr->buf, byte);
 }
 
-static bool write_literal(struct writer *wr, const char *str, size_t len)
+static bool write_string(struct writer *wr, const char *str, size_t len)
 {
+    TRY_WRITE(wr, '\"');
+
     for (size_t i = 0; i < len; i++) {
-        if (!WRITE(wr, str[i]))
-            return false;
+        switch (str[i]) {
+        case 0x00: TRY_WRITE_LITERAL(wr, "\\u0000"); break;
+        case 0x01: TRY_WRITE_LITERAL(wr, "\\u0001"); break;
+        case 0x02: TRY_WRITE_LITERAL(wr, "\\u0002"); break;
+        case 0x03: TRY_WRITE_LITERAL(wr, "\\u0003"); break;
+        case 0x04: TRY_WRITE_LITERAL(wr, "\\u0004"); break;
+        case 0x05: TRY_WRITE_LITERAL(wr, "\\u0005"); break;
+        case 0x06: TRY_WRITE_LITERAL(wr, "\\u0006"); break;
+        case 0x07: TRY_WRITE_LITERAL(wr, "\\u0007"); break;
+        case 0x08: TRY_WRITE_LITERAL(wr, "\\b"); break;
+        case 0x09: TRY_WRITE_LITERAL(wr, "\\t"); break;
+        case 0x0a: TRY_WRITE_LITERAL(wr, "\\n"); break;
+        case 0x0b: TRY_WRITE_LITERAL(wr, "\\u000b"); break;
+        case 0x0c: TRY_WRITE_LITERAL(wr, "\\f"); break;
+        case 0x0d: TRY_WRITE_LITERAL(wr, "\\r"); break;
+        case 0x0e: TRY_WRITE_LITERAL(wr, "\\u000e"); break;
+        case 0x0f: TRY_WRITE_LITERAL(wr, "\\u000f"); break;
+
+        case 0x10: TRY_WRITE_LITERAL(wr, "\\u0010"); break;
+        case 0x11: TRY_WRITE_LITERAL(wr, "\\u0011"); break;
+        case 0x12: TRY_WRITE_LITERAL(wr, "\\u0012"); break;
+        case 0x13: TRY_WRITE_LITERAL(wr, "\\u0013"); break;
+        case 0x14: TRY_WRITE_LITERAL(wr, "\\u0014"); break;
+        case 0x15: TRY_WRITE_LITERAL(wr, "\\u0015"); break;
+        case 0x16: TRY_WRITE_LITERAL(wr, "\\u0016"); break;
+        case 0x17: TRY_WRITE_LITERAL(wr, "\\u0017"); break;
+        case 0x18: TRY_WRITE_LITERAL(wr, "\\u0018"); break;
+        case 0x19: TRY_WRITE_LITERAL(wr, "\\u0019"); break;
+        case 0x1a: TRY_WRITE_LITERAL(wr, "\\u001a"); break;
+        case 0x1b: TRY_WRITE_LITERAL(wr, "\\u001b"); break;
+        case 0x1c: TRY_WRITE_LITERAL(wr, "\\u001c"); break;
+        case 0x1d: TRY_WRITE_LITERAL(wr, "\\u001d"); break;
+        case 0x1e: TRY_WRITE_LITERAL(wr, "\\u001e"); break;
+        case 0x1f: TRY_WRITE_LITERAL(wr, "\\u001f"); break;
+
+        case 0x22: TRY_WRITE_LITERAL(wr, "\\\""); break;
+
+        case 0x5c: TRY_WRITE_LITERAL(wr, "\\\\"); break;
+
+        default:
+            TRY_WRITE(wr, str[i]);
+        }
+
     }
+
+    TRY_WRITE(wr, '\"');
 
     return true;
 }
@@ -37,13 +95,18 @@ static bool write_value(struct writer *wr, const jsean *json)
 {
     switch (jsean_get_type(json)) {
     case JSEAN_TYPE_NULL:
-        return write_literal(wr, "null", 4);
+        TRY_WRITE_LITERAL(wr, "null");
+        return true;
 
     case JSEAN_TYPE_BOOLEAN:
         if (jsean_get_bool(json))
-            return write_literal(wr, "true", 4);
+            TRY_WRITE_LITERAL(wr, "true");
         else
-            return write_literal(wr, "false", 5);
+            TRY_WRITE_LITERAL(wr, "false");
+        return true;
+
+    case JSEAN_TYPE_STRING:
+        return write_string(wr, jsean_get_str(json), jsean_str_len(json));
 
     default:
         return false;
@@ -61,7 +124,7 @@ char *jsean_write(const jsean *json, size_t *len, const char *indent)
         return NULL;
 
     wr.indent = indent;
-    wr.write = write_buffer;
+    wr.write = __write_to_buf;
 
     if (!write_value(&wr, json))
         return NULL;
