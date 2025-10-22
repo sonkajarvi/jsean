@@ -10,6 +10,8 @@
 #include "jsean/jsean.h"
 #include "internal.h"
 
+#define NUM_BUF_LEN 64
+
 #define TRY_WRITE(writer, byte)                  \
     do {                                         \
         bool ret;                                \
@@ -25,15 +27,57 @@
     } while (0)
 
 struct writer {
+    char n_buf[NUM_BUF_LEN];
     struct strbuf buf;
     const char *indent;
 
     bool (*write)(struct writer *, char);
 };
 
-static bool __write_to_buf(struct writer *wr, char byte)
+static bool __write(struct writer *wr, char byte)
 {
     return strbuf_add_byte(&wr->buf, byte);
+}
+
+// Trims trailing zeroes, and uses exponential notation for large numbers.
+static bool write_number(struct writer *wr, double num)
+{
+    int idx, idx2, len;
+
+    if (num != 0.0 && (num > 1e21 || num < 1e-7))
+        idx = snprintf(wr->n_buf, NUM_BUF_LEN, "%e", num);
+    else
+        idx = snprintf(wr->n_buf, NUM_BUF_LEN, "%f", num);
+
+    if (num != 0.0 && (num > 1e21 || num < 1e-7)) {
+        idx2 = idx;
+
+        while (wr->n_buf[idx - 1] != 'e')
+            idx--;
+        idx--;
+
+        len = idx2 - idx;
+        idx2 = idx;
+
+        while (wr->n_buf[idx - 1] == '0')
+            idx--;
+        if (wr->n_buf[idx - 1] == '.')
+            idx--;
+
+        memcpy(&wr->n_buf[idx], &wr->n_buf[idx2], len);
+        wr->n_buf[idx + len] = '\0';
+    } else {
+        while (wr->n_buf[idx - 1] == '0')
+            idx--;
+        if (wr->n_buf[idx - 1] == '.')
+            idx--;
+
+        wr->n_buf[idx] = '\0';
+    }
+
+    TRY_WRITE_LITERAL(wr, wr->n_buf);
+
+    return true;
 }
 
 static bool write_string(struct writer *wr, const char *str, size_t len)
@@ -105,6 +149,9 @@ static bool write_value(struct writer *wr, const jsean *json)
             TRY_WRITE_LITERAL(wr, "false");
         return true;
 
+    case JSEAN_TYPE_NUMBER:
+        return write_number(wr, jsean_get_num(json));
+
     case JSEAN_TYPE_STRING:
         return write_string(wr, jsean_get_str(json), jsean_str_len(json));
 
@@ -124,7 +171,7 @@ char *jsean_write(const jsean *json, size_t *len, const char *indent)
         return NULL;
 
     wr.indent = indent;
-    wr.write = __write_to_buf;
+    wr.write = __write;
 
     if (!write_value(&wr, json))
         return NULL;
