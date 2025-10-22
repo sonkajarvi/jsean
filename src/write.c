@@ -23,7 +23,7 @@
 #define TRY_WRITE_LITERAL(writer, str)           \
     do {                                         \
         for (size_t i = 0; i < strlen(str); i++) \
-            TRY_WRITE(writer, str[i]);           \
+            TRY_WRITE(writer, (str)[i]);         \
     } while (0)
 
 struct writer {
@@ -37,6 +37,96 @@ struct writer {
 static bool __write(struct writer *wr, char byte)
 {
     return strbuf_add_byte(&wr->buf, byte);
+}
+
+static bool write_string(struct writer *wr, const char *str, size_t len);
+static bool write_value(struct writer *wr, const jsean *json);
+
+static bool write_object(struct writer *wr, const jsean *json)
+{
+    struct obj *obj;
+    struct obj_pair *ptr;
+    size_t len;
+
+    TRY_WRITE(wr, '{');
+
+    if (jsean_obj_len(json) > 0) {
+        obj = json->ao_ptr;
+        len = obj->len;
+
+        for (ptr = obj->ptr; len > 1; ptr++) {
+            if (jsean_get_type(&ptr->key) != JSEAN_TYPE_STRING)
+                continue;
+
+            if (wr->indent) {
+                TRY_WRITE(wr, '\n');
+                TRY_WRITE_LITERAL(wr, wr->indent);
+            }
+
+            write_value(wr, &ptr->key);
+            TRY_WRITE(wr, ':');
+            if (wr->indent)
+                TRY_WRITE(wr, ' ');
+
+            write_value(wr, &ptr->val);
+            TRY_WRITE(wr, ',');
+
+            len--;
+        }
+
+        if (wr->indent) {
+            TRY_WRITE(wr, '\n');
+            TRY_WRITE_LITERAL(wr, wr->indent);
+        }
+
+        while (jsean_get_type(&ptr->key) != JSEAN_TYPE_STRING)
+            ptr++;
+
+        write_value(wr, &ptr->key);
+        TRY_WRITE(wr, ':');
+        if (wr->indent)
+            TRY_WRITE(wr, ' ');
+
+        write_value(wr, &ptr->val);
+
+        if (wr->indent)
+            TRY_WRITE(wr, '\n');
+    }
+
+    TRY_WRITE(wr, '}');
+
+    return true;
+}
+
+static bool write_array(struct writer *wr, const jsean *json)
+{
+    TRY_WRITE(wr, '[');
+
+    if (jsean_arr_len(json) > 0) {
+        for (size_t i = 0; i < jsean_arr_len(json) - 1; i++) {
+            if (wr->indent) {
+                TRY_WRITE(wr, '\n');
+                TRY_WRITE_LITERAL(wr, wr->indent);
+            }
+
+            write_value(wr, jsean_arr_at(json, i));
+            TRY_WRITE(wr, ',');
+        }
+
+        if (wr->indent) {
+            TRY_WRITE(wr, '\n');
+            TRY_WRITE_LITERAL(wr, wr->indent);
+        }
+
+        write_value(wr, jsean_arr_at(json, jsean_arr_len(json) - 1));
+
+        if (wr->indent)
+            TRY_WRITE(wr, '\n');
+    }
+
+    TRY_WRITE(wr, ']');
+
+    return true;
 }
 
 // Trims trailing zeroes, and uses exponential notation for large numbers.
@@ -148,6 +238,12 @@ static bool write_value(struct writer *wr, const jsean *json)
         else
             TRY_WRITE_LITERAL(wr, "false");
         return true;
+
+    case JSEAN_TYPE_OBJECT:
+        return write_object(wr, json);
+
+    case JSEAN_TYPE_ARRAY:
+        return write_array(wr, json);
 
     case JSEAN_TYPE_NUMBER:
         return write_number(wr, jsean_get_num(json));

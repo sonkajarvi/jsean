@@ -4,7 +4,6 @@
 // Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 

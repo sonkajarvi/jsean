@@ -11,7 +11,9 @@ add_executable(tests
     "test_read_string.c"
     "test_read_value.c"
     "test_value.c"
+    "test_write_array.c"
     "test_write_number.c"
+    "test_write_object.c"
     "test_write_string.c"
     "test_write_value.c"
 )
