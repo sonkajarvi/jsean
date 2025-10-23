@@ -9,16 +9,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(BUILD_TESTS "Build tests" OFF)
 
 add_library(jsean
-    "src/array.c"
-    "src/object.c"
-    "src/read.c"
-    "src/strbuf.c"
-    "src/value.c"
-    "src/write.c"
+    "jsean.c"
+    "jsean_array.c"
+    "jsean_bool.c"
+    "jsean_null.c"
+    "jsean_number.c"
+    "jsean_object.c"
+    "jsean_read.c"
+    "jsean_string.c"
+    "jsean_write.c"
 )
 
 target_include_directories(jsean PRIVATE
-    "include"
+    "."
 )
 
 target_compile_options(jsean PRIVATE

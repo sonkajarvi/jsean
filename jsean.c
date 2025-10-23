@@ -1,16 +1,78 @@
 //
-// Copyright (c) 2025, sonkajarvi
+// Copyright (c) 2024-2025, sonkajarvi
 //
 // Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include "internal.h"
+#include "jsean.h"
+#include "jsean_internal.h"
 
-#define STRBUF_DEFAULT_CAPACITY 16
+static const char *__type_strings[] = {
+#define X(type_, str_) str_,
+    __JSEAN_TYPE_LIST(X)
+#undef X
+};
+
+static const char *__status_strings[] = {
+#define X(status_, str_) str_,
+    __JSEAN_STATUS_LIST(X)
+#undef X
+};
+
+unsigned int get_internal_type(const jsean *json)
+{
+    if (!json || json->type >= __INTERNAL_TYPE_COUNT)
+        return INTERNAL_TYPE_UNKNOWN;
+
+    return json->type;
+}
+
+unsigned int jsean_get_type(const jsean *json)
+{
+    if (!json || json->type >= __JSEAN_TYPE_COUNT)
+        return JSEAN_TYPE_UNKNOWN;
+
+    return json->type;
+}
+
+const char *jsean_type_to_str(unsigned int type)
+{
+    if (type > __JSEAN_TYPE_COUNT)
+        return NULL;
+
+    return __type_strings[type];
+}
+
+const char *jsean_status_to_str(int status)
+{
+    if (status > __JSEAN_STATUS_COUNT)
+        return NULL;
+
+    return __status_strings[status];
+}
+
+void jsean_free(jsean *json)
+{
+    switch (jsean_get_type(json)) {
+    case JSEAN_TYPE_OBJECT:
+        obj_free(json);
+        break;
+
+    case JSEAN_TYPE_ARRAY:
+        arr_free(json);
+        break;
+
+    case JSEAN_TYPE_STRING:
+        str_free(json);
+        break;
+
+    default:
+        break;
+    }
+}
 
 bool strbuf_init(struct strbuf *buf)
 {

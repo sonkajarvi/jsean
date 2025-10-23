@@ -7,8 +7,8 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "jsean/jsean.h"
-#include "internal.h"
+#include "jsean.h"
+#include "jsean_internal.h"
 
 #define NUM_BUF_LEN 64
 

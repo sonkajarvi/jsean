@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "jsean/jsean.h"
-#include "internal.h"
+#include "jsean.h"
+#include "jsean_internal.h"
 
 #define PEEK(p) ((p)->peek(p))
 #define READ(p) ((p)->read(p))

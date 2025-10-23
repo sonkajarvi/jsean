@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "jsean/jsean.h"
+#include "jsean.h"
 #include "test.h"
 
 #define LEN 64

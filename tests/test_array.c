@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "jsean/jsean.h"
+#include "jsean.h"
 #include "test.h"
 
 TEST(jsean_array, set_arr)

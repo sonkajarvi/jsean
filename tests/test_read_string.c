@@ -6,7 +6,7 @@
 
 #include <string.h>
 
-#include "jsean/jsean.h"
+#include "jsean.h"
 #include "test.h"
 
 #define TEST_STRING(name, input, output)                                   \

@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-#include "jsean/jsean.h"
+#include "jsean.h"
 #include "test.h"
 
 TEST(jsean_read_stream, file_64kb)

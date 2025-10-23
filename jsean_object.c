@@ -10,8 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "jsean/jsean.h"
-#include "internal.h"
+#include "jsean.h"
+#include "jsean_internal.h"
 
 static inline float get_load_factor(struct obj *obj)
 {

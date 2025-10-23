@@ -4,7 +4,7 @@
 // Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
-#include "jsean/jsean.h"
+#include "jsean.h"
 #include "test.h"
 
 TEST(jsean_read_array, empty)

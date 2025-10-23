@@ -28,13 +28,23 @@
         }                                                                \
     })
 
-#define __JSEAN_TYPE_LIST(X)         \
-    X(JSEAN_TYPE_NULL, "null")       \
+#define __JSEAN_TYPE_LIST(X) \
+    X(JSEAN_TYPE_NULL, "null") \
     X(JSEAN_TYPE_BOOLEAN, "boolean") \
-    X(JSEAN_TYPE_OBJECT, "object")   \
-    X(JSEAN_TYPE_ARRAY, "array")     \
-    X(JSEAN_TYPE_NUMBER, "number")   \
+    X(JSEAN_TYPE_OBJECT, "object") \
+    X(JSEAN_TYPE_ARRAY, "array") \
+    X(JSEAN_TYPE_NUMBER, "number") \
     X(JSEAN_TYPE_STRING, "string")
+
+enum jsean_type {
+#define X(type_, str_) type_,
+    __JSEAN_TYPE_LIST(X)
+#undef X
+
+    __JSEAN_TYPE_COUNT,
+
+    JSEAN_TYPE_UNKNOWN,
+};
 
 #define __JSEAN_STATUS_LIST(X)                                                                \
     X(JSEAN_SUCCESS, "success")                                                               \
@@ -54,16 +64,6 @@
     X(JSEAN_INVALID_UNICODE_ESCAPE_SEQUENCE, "invalid Unicode escape sequence")               \
     X(JSEAN_INVALID_UTF8_SEQUENCE, "invalid UTF-8 sequence")                                  \
     X(JSEAN_OUT_OF_MEMORY, "out of memory")
-
-enum jsean_type {
-#define X(type_, str_) type_,
-    __JSEAN_TYPE_LIST(X)
-#undef X
-
-    __JSEAN_TYPE_COUNT,
-
-    JSEAN_TYPE_UNKNOWN,
-};
 
 enum jsean_status {
 #define X(status_, str_) status_,
@@ -94,7 +94,31 @@ typedef struct {
     unsigned int type;
 } jsean;
 
-// Get the type of a JSON value
+struct __jsean_arr {
+    jsean *data;
+    size_t cap;
+    size_t len;
+};
+
+struct __jsean_obj {
+    struct __jsean_obj_pair *data;
+    size_t cap;
+    size_t used;
+    size_t dead;
+};
+
+struct __jsean_obj_pair {
+    jsean key;
+    jsean val;
+};
+
+struct __jsean_strbuf {
+    char *data;
+    size_t cap;
+    size_t len;
+};
+
+// Get the type of a JSON value.
 unsigned int jsean_get_type(const jsean *json);
 
 const char *jsean_type_to_str(unsigned int type);
@@ -140,18 +164,18 @@ jsean *jsean_arr_add(jsean *json, const size_t index, const jsean *val);
 // Does not copy the value. The value at the given index is overwritten. If the
 // index is the element after last (i.e. length), the value is appended.
 jsean *jsean_arr_set(jsean *json, const size_t index, const jsean *val);
+void jsean_arr_del(jsean *json, const size_t index);
+void jsean_arr_clear(jsean *json);
+
 static inline jsean *jsean_arr_push(jsean *json, const jsean *val)
 {
     return jsean_arr_add(json, jsean_arr_len(json), val);
 }
 
-void jsean_arr_del(jsean *json, const size_t index);
 static inline void jsean_arr_pop(jsean *json)
 {
     jsean_arr_del(json, jsean_arr_len(json) - 1);
 }
-
-void jsean_arr_clear(jsean *json);
 
 // Number cannot be Infinity or NaN.
 bool jsean_set_num(jsean *json, double num);

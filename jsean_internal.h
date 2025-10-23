@@ -9,7 +9,7 @@
 
 #include <stddef.h>
 
-#include "jsean/jsean.h"
+#include "jsean.h"
 
 #define STRING_LENGTH_MAX           4294967294 // 2^32-1
 #define STRING_HASH_UNDEFINED       0
@@ -18,6 +18,8 @@
 
 #define OBJECT_DEFAULT_CAPACITY     16
 #define OBJECT_LOAD_FACTOR_MAX      0.67
+
+#define STRBUF_DEFAULT_CAPACITY 16
 
 enum internal_type {
     // Same as jsean_type

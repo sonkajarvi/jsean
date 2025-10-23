@@ -9,8 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "jsean/jsean.h"
-#include "internal.h"
+#include "jsean.h"
+#include "jsean_internal.h"
 
 static struct arr *arr_init(void)
 {
