@@ -50,8 +50,8 @@ TEST(jsean_null, set_null)
 {
     jsean a;
 
-    ASSERT(jsean_set_null(NULL) == false);
-    ASSERT(jsean_set_null(&a) == true);
+    ASSERT(jsean_set_null(NULL) != JSEAN_SUCCESS);
+    ASSERT(jsean_set_null(&a) == JSEAN_SUCCESS);
 
     jsean_free(&a);
 }
@@ -62,8 +62,8 @@ TEST(jsean_bool, set_bool)
 {
     jsean a;
 
-    ASSERT(jsean_set_bool(NULL, true) == false);
-    ASSERT(jsean_set_bool(&a, true) == true);
+    ASSERT(jsean_set_bool(NULL, true) != JSEAN_SUCCESS);
+    ASSERT(jsean_set_bool(&a, true) == JSEAN_SUCCESS);
 
     jsean_free(&a);
 }
@@ -86,11 +86,11 @@ TEST(jsean_number, set_num)
 {
     jsean a;
 
-    ASSERT(jsean_set_num(NULL, 2.0) == false);
-    ASSERT(jsean_set_num(&a, NAN) == false);
-    ASSERT(jsean_set_num(&a, INFINITY) == false);
+    ASSERT(jsean_set_num(NULL, 2.0) != JSEAN_SUCCESS);
+    ASSERT(jsean_set_num(&a, NAN) != JSEAN_SUCCESS);
+    ASSERT(jsean_set_num(&a, INFINITY) != JSEAN_SUCCESS);
 
-    ASSERT(jsean_set_num(&a, 2.0) == true);
+    ASSERT(jsean_set_num(&a, 2.0) == JSEAN_SUCCESS);
 
     jsean_free(&a);
 }
@@ -113,13 +113,13 @@ TEST(jsean_string, set_str)
 {
     jsean a;
 
-    ASSERT(jsean_set_str(NULL, NULL, 0, NULL) == false);
-    ASSERT(jsean_set_str(&a, NULL, 0, NULL) == false);
+    ASSERT(jsean_set_str(NULL, NULL, 0, NULL) != JSEAN_SUCCESS);
+    ASSERT(jsean_set_str(&a, NULL, 0, NULL) != JSEAN_SUCCESS);
 
-    ASSERT(jsean_set_str(&a, "abc", 0, NULL) == true);
+    ASSERT(jsean_set_str(&a, "abc", 0, NULL) == JSEAN_SUCCESS);
     jsean_free(&a);
 
-    ASSERT(jsean_set_str(&a, strdup("def"), 3, free) == true);
+    ASSERT(jsean_set_str(&a, strdup("def"), 3, free) == JSEAN_SUCCESS);
     jsean_free(&a);
 }
 

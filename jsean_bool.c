@@ -8,15 +8,15 @@
 
 #include "jsean.h"
 
-bool jsean_set_bool(jsean *json, bool b)
+int jsean_set_bool(jsean *json, bool b)
 {
     if (!json)
-        return false;
+        return JSEAN_INVALID_ARGUMENTS;
 
     json->type = JSEAN_TYPE_BOOLEAN;
     json->b_val = b;
 
-    return true;
+    return JSEAN_SUCCESS;
 }
 
 bool jsean_get_bool(const jsean *json)

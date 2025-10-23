@@ -4,7 +4,6 @@
 // Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,15 +31,15 @@ static struct arr *arr_init(void)
     return arr;
 }
 
-bool jsean_set_arr(jsean *json)
+int jsean_set_arr(jsean *json)
 {
     if (!json)
-        return false;
+        return JSEAN_INVALID_ARGUMENTS;
 
     json->type = JSEAN_TYPE_ARRAY;
     json->ao_ptr = NULL;
 
-    return true;
+    return JSEAN_SUCCESS;
 }
 
 size_t jsean_arr_len(const jsean *json)

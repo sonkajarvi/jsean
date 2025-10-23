@@ -4,8 +4,8 @@
 // Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
-#ifndef JSEAN_JSEAN_H
-#define JSEAN_JSEAN_H
+#ifndef JSEAN_H
+#define JSEAN_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -94,30 +94,6 @@ typedef struct {
     unsigned int type;
 } jsean;
 
-struct __jsean_arr {
-    jsean *data;
-    size_t cap;
-    size_t len;
-};
-
-struct __jsean_obj {
-    struct __jsean_obj_pair *data;
-    size_t cap;
-    size_t used;
-    size_t dead;
-};
-
-struct __jsean_obj_pair {
-    jsean key;
-    jsean val;
-};
-
-struct __jsean_strbuf {
-    char *data;
-    size_t cap;
-    size_t len;
-};
-
 // Get the type of a JSON value.
 unsigned int jsean_get_type(const jsean *json);
 
@@ -133,13 +109,13 @@ int jsean_read_stream(jsean *json, FILE *fp);
 
 char *jsean_write(const jsean *json, size_t *len, const char *indent);
 
-bool jsean_set_null(jsean *json);
+int jsean_set_null(jsean *json);
 
-bool jsean_set_bool(jsean *json, bool b);
+int jsean_set_bool(jsean *json, bool b);
 bool jsean_get_bool(const jsean *json);
 
 // Lazily allocated
-bool jsean_set_obj(jsean *json);
+int jsean_set_obj(jsean *json);
 size_t jsean_obj_len(const jsean *json);
 jsean *jsean_obj_at(const jsean *json, const jsean *key);
 
@@ -153,7 +129,7 @@ void jsean_obj_del(jsean *json, const jsean *key);
 void jsean_obj_clear(jsean *json);
 
 // Lazily allocated
-bool jsean_set_arr(jsean *json);
+int jsean_set_arr(jsean *json);
 size_t jsean_arr_len(const jsean *json);
 jsean *jsean_arr_at(const jsean *json, const size_t index);
 
@@ -178,13 +154,13 @@ static inline void jsean_arr_pop(jsean *json)
 }
 
 // Number cannot be Infinity or NaN.
-bool jsean_set_num(jsean *json, double num);
+int jsean_set_num(jsean *json, double num);
 double jsean_get_num(const jsean *json);
 
 // String must be null-terminated if length is zero. The freeing function may
 // be NULL if the string doesn't need to be freed.
-bool jsean_set_str(jsean *json, char *str, size_t len, void (*free_fn)(void *));
+int jsean_set_str(jsean *json, char *str, size_t len, void (*free_fn)(void *));
 const char *jsean_get_str(const jsean *json);
 size_t jsean_str_len(const jsean *json);
 
-#endif // JSEAN_JSEAN_H
+#endif // JSEAN_H

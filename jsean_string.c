@@ -9,16 +9,16 @@
 #include "jsean.h"
 #include "jsean_internal.h"
 
-bool jsean_set_str(jsean *json, char *str, size_t len, void (*free_fn)(void *))
+int jsean_set_str(jsean *json, char *str, size_t len, void (*free_fn)(void *))
 {
     if (!json || !str || len > STRING_LENGTH_MAX)
-        return false;
+        return JSEAN_INVALID_ARGUMENTS;
 
     if (!len) {
         len = strlen(str);
 
         if (len > STRING_LENGTH_MAX)
-            return false;
+            return JSEAN_INVALID_ARGUMENTS;
     }
 
     json->s_val = str;
@@ -26,7 +26,7 @@ bool jsean_set_str(jsean *json, char *str, size_t len, void (*free_fn)(void *))
     json->s_free_fn = free_fn;
     json->type = JSEAN_TYPE_STRING;
 
-    return true;
+    return JSEAN_SUCCESS;
 }
 
 const char *jsean_get_str(const jsean *json)

@@ -4,9 +4,7 @@
 // Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
-#include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -72,15 +70,15 @@ static void obj_rehash(struct obj *obj, size_t old_cap)
     }
 }
 
-bool jsean_set_obj(jsean *json)
+int jsean_set_obj(jsean *json)
 {
     if (!json)
-        return false;
+        return JSEAN_INVALID_ARGUMENTS;
 
     json->ao_ptr = NULL;
     json->type = JSEAN_TYPE_OBJECT;
 
-    return true;
+    return JSEAN_SUCCESS;
 }
 
 size_t jsean_obj_len(const jsean *json)

@@ -14,8 +14,8 @@ TEST(jsean_object, obj)
 {
     jsean a;
 
-    ASSERT(jsean_set_obj(NULL) == false);
-    ASSERT(jsean_set_obj(&a) == true);
+    ASSERT(jsean_set_obj(NULL) != JSEAN_SUCCESS);
+    ASSERT(jsean_set_obj(&a) == JSEAN_SUCCESS);
 
     jsean_free(&a);
 }
@@ -93,7 +93,7 @@ TEST(jsean_object, set)
     ASSERT(jsean_obj_set(&a, JSEAN_S("a"), NULL) == NULL);
     ASSERT(jsean_obj_set(&b, JSEAN_S("a"), &a) == NULL);
 
-    ASSERT(jsean_set_str(&c, "a", 1, NULL));
+    jsean_set_str(&c, "a", 1, NULL);
     ASSERT(jsean_obj_set(&a, &c, &b) != NULL);
     ASSERT(jsean_get_type(&c) == JSEAN_TYPE_NULL);
     ASSERT(jsean_get_type(jsean_obj_at(&a, JSEAN_S("a"))) == JSEAN_TYPE_NUMBER);

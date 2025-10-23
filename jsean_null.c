@@ -4,16 +4,14 @@
 // Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
-#include <stdbool.h>
-
 #include "jsean.h"
 
-bool jsean_set_null(jsean *json)
+int jsean_set_null(jsean *json)
 {
     if (!json)
-        return false;
+        return JSEAN_INVALID_ARGUMENTS;
 
     json->type = JSEAN_TYPE_NULL;
 
-    return true;
+    return JSEAN_SUCCESS;
 }

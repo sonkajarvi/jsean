@@ -4,8 +4,8 @@
 // Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
-#ifndef INTERNAL_H
-#define INTERNAL_H
+#ifndef JSEAN_INTERNAL_H
+#define JSEAN_INTERNAL_H
 
 #include <stddef.h>
 
@@ -19,7 +19,7 @@
 #define OBJECT_DEFAULT_CAPACITY     16
 #define OBJECT_LOAD_FACTOR_MAX      0.67
 
-#define STRBUF_DEFAULT_CAPACITY 16
+#define STRBUF_DEFAULT_CAPACITY     16
 
 enum internal_type {
     // Same as jsean_type
@@ -93,4 +93,4 @@ bool str_cmp(const jsean *json, const jsean *other);
 size_t str_hash(const jsean *json);
 void str_free(jsean *json);
 
-#endif // INTERNAL_H
+#endif // JSEAN_INTERNAL_H

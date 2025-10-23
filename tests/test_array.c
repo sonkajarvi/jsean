@@ -14,8 +14,8 @@ TEST(jsean_array, set_arr)
 {
     jsean a;
 
-    ASSERT(jsean_set_arr(NULL) == false);
-    ASSERT(jsean_set_arr(&a) == true);
+    ASSERT(jsean_set_arr(NULL) != JSEAN_SUCCESS);
+    ASSERT(jsean_set_arr(&a) == JSEAN_SUCCESS);
 
     jsean_free(&a);
 }

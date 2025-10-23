@@ -4,24 +4,23 @@
 // Licensed under the BSD 2-Clause License. See LICENSE.txt
 //
 
-#include <stdbool.h>
 #include <math.h>
 
 #include "jsean.h"
 
-bool jsean_set_num(jsean *json, double num)
+int jsean_set_num(jsean *json, double num)
 {
     if (json) {
         if (isnan(num) || isinf(num))
-            return false;
+            return JSEAN_INVALID_ARGUMENTS;
 
         json->type = JSEAN_TYPE_NUMBER;
         json->n_val = num;
 
-        return true;
+        return JSEAN_SUCCESS;
     }
 
-    return false;
+    return JSEAN_INVALID_ARGUMENTS;
 }
 
 double jsean_get_num(const jsean *json)
